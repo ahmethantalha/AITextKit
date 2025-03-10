@@ -1,0 +1,2289 @@
+{% extends "base.html" %}
+
+{% block title %}Metin Analiz Uygulaması{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center space-x-3">
+    <a href="/" class="flex items-center text-primary-600 font-medium">
+        <i class="fas fa-home mr-1"></i>
+        <span class="text-sm">Anasayfa</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/settings" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-cog mr-1"></i>
+        <span class="text-sm">Ayarlar</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/chat" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-comment-dots mr-1"></i>
+        <span class="text-sm">AI Sohbet</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/history" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-history mr-1"></i>
+        <span class="text-sm">Geçmiş</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Animasyonlar */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    .animate-slide-in {
+        animation: slideInRight 0.5s ease-out forwards;
+    }
+    
+    .hover-pulse:hover {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    /* Modern Kart Efektleri */
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Modern dosya yükleme alanı */
+    .modern-dropzone {
+        background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%230EA5E9' stroke-width='2' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        transition: all 0.3s ease;
+    }
+    
+    .modern-dropzone:hover {
+        background-color: rgba(14, 165, 233, 0.05);
+    }
+    
+    /* Geliştirilmiş scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #0EA5E9;
+        border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #0284C7;
+    }
+    
+    /* Gelişmiş buton efektleri */
+    .btn-primary {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
+    }
+    
+    .btn-primary:hover:after {
+        animation: ripple 1s ease-out;
+    }
+    
+    @keyframes ripple {
+        0% {
+            transform: scale(0, 0);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(20, 20);
+            opacity: 0;
+        }
+    }
+    
+    /* Geçiş efektleri */
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+    
+    /* Dark mode optimizasyonları */
+    .dark .modern-dropzone {
+        background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%2360A5FA' stroke-width='2' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+    }
+    
+    .dark .modern-dropzone:hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .dark .custom-scrollbar::-webkit-scrollbar-track {
+        background: #1e1e1e;
+    }
+    
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #3B82F6;
+    }
+    
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #60A5FA;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header & Intro Section -->
+    <div class="mb-8 text-center animate-fade-in">
+        <h2 class="text-3xl font-bold text-gray-800 mb-3 dark:text-gray-100">Yapay Zeka ile Metin Analizi</h2>
+        <p class="text-lg text-gray-600 max-w-3xl mx-auto dark:text-gray-300">Yüklediğiniz dosyalardan soru-cevap çiftleri oluşturun, özetler çıkarın veya özel analizler yapın.</p>
+        
+        <!-- Hızlı Erişim Butonları -->
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <button id="quick-qa" class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition flex items-center dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800">
+                <i class="fas fa-question-circle mr-2"></i>
+                <span>Soru-Cevap Oluştur</span>
+            </button>
+            <button id="quick-summary" class="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition flex items-center dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800">
+                <i class="fas fa-file-alt mr-2"></i>
+                <span>Metin Özeti</span>
+            </button>
+            <button id="quick-custom" class="px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition flex items-center dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800">
+                <i class="fas fa-magic mr-2"></i>
+                <span>Özel Analiz</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Sol Panel - Dosya Yükleme -->
+        <div class="lg:col-span-7 space-y-6 animate-fade-in" style="animation-delay: 0.1s;">
+            <!-- Dosya Yükleme Section -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover dark:bg-gray-800">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-upload text-xl mr-3"></i>
+                        <h3 class="text-lg font-semibold">Dosya Yükleme</h3>
+                    </div>
+                </div>
+                <div class="px-6 py-5">
+                    <form id="upload-form" enctype="multipart/form-data">
+                        <div id="dropzone" class="modern-dropzone h-60 flex flex-col items-center justify-center cursor-pointer rounded-xl p-6 hover-pulse">
+                            <div class="text-center">
+                                <div class="mb-4 p-4 rounded-full bg-primary-50 inline-block dark:bg-primary-900">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-primary-500 dark:text-primary-400"></i>
+                                </div>
+                                <p class="text-gray-600 mb-1 dark:text-gray-300">Dosyaları buraya sürükleyin</p>
+                                <p class="text-gray-500 text-sm mb-3 dark:text-gray-400">veya</p>
+                                <button type="button" id="browse-files" class="bg-primary-500 hover:bg-primary-600 text-white py-2 px-5 rounded-lg transition flex items-center mx-auto btn-primary dark:bg-primary-600 dark:hover:bg-primary-700">
+                                    <i class="fas fa-folder-open mr-2"></i>
+                                    <span>Dosya Seç</span>
+                                </button>
+                                <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.jpg,.jpeg,.png,.txt,.docx,.json">
+                                <p class="text-xs text-gray-500 mt-3 dark:text-gray-400">Maksimum dosya boyutu: {{ max_file_size }} MB | Desteklenen formatlar: {{ allowed_file_types }}</p>
+                            </div>
+                        </div>
+                        
+                        <div id="file-list-container" class="mt-5 hidden">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-medium text-gray-700 dark:text-gray-200">Yüklenen Dosyalar</h4>
+                                <button type="button" id="clear-files" class="text-gray-700 hover:text-red-600 py-1 px-3 border border-gray-300 rounded-lg hover:bg-red-50 transition flex items-center text-sm dark:text-gray-300 dark:border-gray-600 dark:hover:bg-red-900 dark:hover:text-red-400">
+                                    <i class="fas fa-trash-alt mr-1"></i>
+                                    <span>Temizle</span>
+                                </button>
+                            </div>
+                            <div id="file-list" class="max-h-60 overflow-y-auto custom-scrollbar border rounded-lg divide-y dark:border-gray-700 dark:divide-gray-700"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- İşlem Seçenekleri -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover animate-slide-in dark:bg-gray-800" style="animation-delay: 0.3s;">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white">
+                    <div class="flex items-center">
+                        <i class="fas fa-sliders-h text-xl mr-3"></i>
+                        <h3 class="text-lg font-semibold">İşlem Seçenekleri</h3>
+                    </div>
+                </div>
+                <div class="px-6 py-5">
+                    <div class="mb-5">
+                        <label for="model-select" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">AI Modeli</label>
+                        <div class="relative">
+                            <select id="model-select" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                <option value="gemini">Google Gemini</option>
+                                <option value="llama">AnythingLLM (Llama)</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1 dark:text-gray-400" id="model-info">Google'ın Gemini AI modelini kullanarak işlem yapılacak.</p>
+                    </div>
+
+                    <!-- İşlem Türü Seçimi -->
+                    <div class="mb-5">
+                        <label for="prompt-type" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">İşlem Türü</label>
+                        <div class="flex space-x-2">
+                            <div class="relative flex-grow">
+                                <select id="prompt-type" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                    <option value="Soru-Cevap Üretimi">Soru-Cevap Üretimi</option>
+                                    <option value="Metin Özeti Oluştur">Metin Özeti Oluştur</option>
+                                    <option value="Özel Prompt">Özel Prompt</option>
+                                    <!-- Kaydedilmiş işlemler listesi buraya eklenir -->
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                            <button id="manage-prompt-types" type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-lg transition flex items-center justify-center w-12 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300" title="İşlem Türlerini Yönet">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Konu Alanı -->
+                    <div id="topic-container" class="mb-5">
+                        <label for="topic" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">Konu</label>
+                        <input type="text" id="topic" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" placeholder="Konuyu belirtin (örn: yapay zeka, tarih, finans...)">
+                    </div>
+                    
+                    <!-- Çıktı Formatı -->
+                    <div id="output-format-container" class="mb-5 hidden">
+                        <label for="output-format" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">Çıktı Formatı</label>
+                        <div class="flex space-x-2">
+                            <label class="flex-1">
+                                <input type="radio" name="output-format" value="TXT" class="hidden peer" checked>
+                                <div class="flex items-center justify-center p-3 border rounded-lg cursor-pointer peer-checked:bg-primary-50 peer-checked:border-primary-500 hover:bg-gray-50 transition dark:border-gray-600 dark:hover:bg-gray-700 dark:peer-checked:bg-primary-900">
+                                    <i class="fas fa-file-alt mr-2 text-gray-500 peer-checked:text-primary-600 dark:text-gray-400 dark:peer-checked:text-primary-400"></i>
+                                    <span>TXT</span>
+                                </div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="output-format" value="DOCX" class="hidden peer">
+                                <div class="flex items-center justify-center p-3 border rounded-lg cursor-pointer peer-checked:bg-primary-50 peer-checked:border-primary-500 hover:bg-gray-50 transition dark:border-gray-600 dark:hover:bg-gray-700 dark:peer-checked:bg-primary-900">
+                                    <i class="fas fa-file-word mr-2 text-gray-500 peer-checked:text-primary-600 dark:text-gray-400 dark:peer-checked:text-primary-400"></i>
+                                    <span>DOCX</span>
+                                </div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" name="output-format" value="PDF" class="hidden peer">
+                                <div class="flex items-center justify-center p-3 border rounded-lg cursor-pointer peer-checked:bg-primary-50 peer-checked:border-primary-500 hover:bg-gray-50 transition dark:border-gray-600 dark:hover:bg-gray-700 dark:peer-checked:bg-primary-900">
+                                    <i class="fas fa-file-pdf mr-2 text-gray-500 peer-checked:text-primary-600 dark:text-gray-400 dark:peer-checked:text-primary-400"></i>
+                                    <span>PDF</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Özel Prompt Alanı -->
+                    <div id="custom-prompt-container" class="mb-5 hidden">
+                        <label for="custom-prompt" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">Özel Prompt</label>
+                        <textarea id="custom-prompt" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 custom-scrollbar dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" rows="5" placeholder="Özel promptunuzu yazın..."></textarea>
+                    </div>
+                    
+                    <!-- İşleme Modu -->
+                    <div id="processing-mode-container" class="mb-5">
+                        <label for="processing-mode" class="block text-gray-700 font-medium mb-2 dark:text-gray-200">İşleme Modu</label>
+                        <div class="relative">
+                            <select id="processing-mode" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+                                <option value="auto">Otomatik (İçerik türüne göre)</option>
+                                <option value="separate">Her parça için ayrı işleme</option>
+                                <option value="combined">Tüm parçaları birleştirip işleme</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1 dark:text-gray-400">Blog yazısı veya makale gibi bütünsel içerikler için "Tüm parçaları birleştirip işleme" önerilir.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Panel - Prompt Önizleme ve İşlem Başlatma -->
+        <div class="lg:col-span-5 animate-slide-in" style="animation-delay: 0.5s;">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden sticky top-6 card-hover dark:bg-gray-800">
+                <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                    <div class="flex items-center">
+                        <i class="fas fa-magic text-xl mr-3"></i>
+                        <h3 class="text-lg font-semibold">Prompt Önizleme & İşlem</h3>
+                    </div>
+                </div>
+                <div class="px-6 py-5">
+                    <!-- Prompt Önizleme -->
+                    <div class="mb-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-200">Prompt Önizleme</h4>
+                            <div class="flex space-x-2">
+                                <button id="copy-prompt" class="text-gray-500 hover:text-gray-700 transition dark:text-gray-400 dark:hover:text-gray-200" title="Promptu Kopyala">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <button id="edit-prompt" class="text-gray-500 hover:text-gray-700 transition dark:text-gray-400 dark:hover:text-gray-200" title="Promptu Düzenle">
+                                    <i class="far fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="prompt-preview" class="w-full p-4 bg-gray-50 border rounded-lg min-h-[200px] whitespace-pre-wrap overflow-y-auto custom-scrollbar text-sm font-mono dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300"></div>
+                    </div>
+                    
+                    <!-- AI Ayarları -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3 dark:text-gray-200">AI Ayarları</h4>
+                        
+                        <!-- Temperature -->
+                        <div class="mb-3">
+                            <div class="flex justify-between">
+                                <label for="temperature" class="text-sm text-gray-600 dark:text-gray-400">Yaratıcılık (Temperature)</label>
+                                <span id="temperature-value" class="text-sm text-gray-600 dark:text-gray-400">0.7</span>
+                            </div>
+                            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1 dark:text-gray-500">
+                                <span>Kesin</span>
+                                <span>Yaratıcı</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Çıktı Uzunluğu -->
+                        <div>
+                            <div class="flex justify-between">
+                                <label for="max-tokens" class="text-sm text-gray-600 dark:text-gray-400">Çıktı Uzunluğu</label>
+                                <span id="max-tokens-value" class="text-sm text-gray-600 dark:text-gray-400">2048</span>
+                            </div>
+                            <input type="range" id="max-tokens" min="256" max="8192" step="256" value="2048" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1 dark:text-gray-500">
+                                <span>Kısa</span>
+                                <span>Uzun</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- İşlem Başlatma Butonu -->
+                    <div>
+                        <button id="start-processing" class="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white py-4 px-8 rounded-lg text-lg font-medium transition flex items-center justify-center btn-primary dark:from-primary-700 dark:to-primary-600 dark:hover:from-primary-800 dark:hover:to-primary-700">
+                            <i class="fas fa-rocket mr-2"></i>
+                            <span>İşlemi Başlat</span>
+                        </button>
+                        <p class="text-xs text-center text-gray-500 mt-3 dark:text-gray-400">Dosya yükledikten ve işlem türünü seçtikten sonra "İşlemi Başlat" düğmesine tıklayın.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Son İşlemler -->
+    <div class="mt-10 animate-fade-in" style="animation-delay: 0.7s;">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Son İşlemler</h3>
+            <a href="/history" class="text-primary-600 hover:text-primary-700 flex items-center dark:text-primary-400 dark:hover:text-primary-300">
+                <span>Tüm Geçmiş</span>
+                <i class="fas fa-chevron-right ml-1 text-xs"></i>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for i in range(3) %}
+            <div class="bg-white p-4 rounded-xl shadow transition-all cursor-pointer hover:shadow-md card-hover dark:bg-gray-800">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full dark:bg-blue-900 dark:text-blue-200">Soru-Cevap</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ "10/03/2025" }}</div>
+                </div>
+                <h4 class="font-medium mb-1 dark:text-gray-200">{{ "Örnek İşlem " ~ (i+1) }}</h4>
+                <p class="text-sm text-gray-600 mb-3 line-clamp-2 dark:text-gray-400">{{ "Bu örnek bir işlem kaydıdır. Gerçek sonuçlar görmek için işlem yapmanız gerekmektedir." }}</p>
+                <div class="flex justify-end">
+                    <button class="text-primary-600 hover:text-primary-700 text-sm dark:text-primary-400 dark:hover:text-primary-300">Sonucu Görüntüle</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- İşlem Türleri Yönetim Modalı -->
+<div id="prompt-types-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col animate-fade-in dark:bg-gray-800">
+        <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-list-alt text-xl mr-3"></i>
+                    <h3 class="font-semibold text-lg">İşlem Türleri Yönetimi</h3>
+                </div>
+                <button id="close-prompt-types-modal" class="text-white hover:text-primary-200 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-grow custom-scrollbar">
+            <div class="mb-8">
+                <h4 class="font-semibold text-gray-700 mb-4 dark:text-gray-200">Yeni İşlem Türü Ekle</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-prompt-name" class="block text-gray-700 mb-2 dark:text-gray-300">İşlem Türü Adı</label>
+                        <input type="text" id="new-prompt-name" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" placeholder="Benzersiz bir isim girin">
+                    </div>
+                    <div>
+                        <label for="new-prompt-text" class="block text-gray-700 mb-2 dark:text-gray-300">Prompt Metni</label>
+                        <textarea id="new-prompt-text" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 custom-scrollbar dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" rows="6" placeholder="İşlem sırasında kullanılacak prompt metni"></textarea>
+                    </div>
+                    <div class="text-right">
+                        <button id="save-new-prompt" class="bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white py-2 px-5 rounded-lg transition flex items-center ml-auto dark:from-primary-700 dark:to-primary-600 dark:hover:from-primary-800 dark:hover:to-primary-700">
+                            <i class="fas fa-save mr-2"></i>
+                            <span>Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- İşlem türleri listesi -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-200">Kayıtlı İşlem Türleri</h4>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <span id="saved-prompt-count">0</span> işlem türü
+                    </div>
+                </div>
+                <div id="saved-prompt-types-list" class="space-y-3">
+                    <!-- JavaScript ile doldurulacak -->
+                    <div class="p-4 text-center bg-gray-50 rounded-lg text-gray-500 italic dark:bg-gray-700 dark:text-gray-400">
+                        Kayıtlı işlem türü bulunamadı.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İşlem Türü Düzenleme Modalı -->
+<div id="edit-prompt-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col animate-fade-in dark:bg-gray-800">
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-edit text-xl mr-3"></i>
+                    <h3 class="font-semibold text-lg">İşlem Türü Düzenle</h3>
+                </div>
+                <button id="close-edit-prompt-modal" class="text-white hover:text-blue-200 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-grow custom-scrollbar">
+            <div class="space-y-4">
+                <input type="hidden" id="edit-prompt-id">
+                <div>
+                    <label for="edit-prompt-name" class="block text-gray-700 mb-2 dark:text-gray-300">İşlem Türü Adı</label>
+                    <input type="text" id="edit-prompt-name" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" placeholder="İşlem türü adı">
+                </div>
+                <div>
+                    <label for="edit-prompt-text" class="block text-gray-700 mb-2 dark:text-gray-300">Prompt Metni</label>
+                    <textarea id="edit-prompt-text" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 custom-scrollbar dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" rows="10" placeholder="İşlem türü prompt metni"></textarea>
+                </div>
+                <div class="text-right">
+                    <button id="save-edit-prompt" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-5 rounded-lg transition flex items-center ml-auto dark:from-blue-700 dark:to-indigo-600 dark:hover:from-blue-800 dark:hover:to-indigo-700">
+                        <i class="fas fa-check mr-2"></i>
+                        <span>Güncelle</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Results Modal -->
+<div id="results-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col animate-fade-in dark:bg-gray-800">
+        <div class="px-6 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-bar text-xl mr-3"></i>
+                    <h3 class="font-semibold text-lg">İşlem Sonuçları</h3>
+                </div>
+                <button id="close-modal" class="text-white hover:text-green-200 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-y-auto flex-grow p-6 custom-scrollbar">
+            <div id="processing-status" class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="mr-3 w-10 h-10 flex items-center justify-center bg-blue-100 rounded-full dark:bg-blue-900">
+                            <i id="processing-icon" class="fas fa-spinner fa-spin text-primary-500 dark:text-primary-400"></i>
+                        </div>
+                        <div>
+                            <span id="processing-text" class="font-medium text-gray-800 dark:text-gray-200">İşlem Devam Ediyor...</span>
+                            <div class="text-xs text-gray-500 dark:text-gray-400" id="time-elapsed">00:00</div>
+                        </div>
+                    </div>
+                    <span id="progress-percentage" class="text-lg font-semibold text-primary-600 dark:text-primary-400">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div id="progress-bar" class="bg-gradient-to-r from-primary-500 to-primary-400 h-2.5 rounded-full progress-bar dark:from-primary-600 dark:to-primary-500" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div id="result-messages" class="space-y-3 mb-6 max-h-[300px] overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50 custom-scrollbar dark:border-gray-700 dark:bg-gray-900">
+                <!-- Messages will be added here -->
+                <div class="text-center text-gray-500 italic dark:text-gray-400">
+                    İşlem başlatılıyor...
+                </div>
+            </div>
+            
+            <div id="result-content" class="hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-200">İşlem Sonucu</h4>
+                    <div class="flex space-x-2">
+                        <button id="copy-result" class="text-gray-500 hover:text-gray-700 transition dark:text-gray-400 dark:hover:text-gray-200" title="Sonucu Kopyala">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        <button id="save-to-favorites" class="text-gray-500 hover:text-yellow-500 transition dark:text-gray-400 dark:hover:text-yellow-400" title="Favorilere Ekle">
+                            <i class="far fa-star"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="result-display" class="border rounded-lg p-5 bg-white mb-5 max-h-[300px] overflow-y-auto custom-scrollbar dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"></div>
+                
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">İşlem ID: </span>
+                        <span id="result-id" class="text-xs font-mono text-gray-600 dark:text-gray-300">abc123</span>
+                    </div>
+                    <a id="download-result" href="#" class="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white py-2 px-5 rounded-lg transition flex items-center dark:from-green-700 dark:to-teal-600 dark:hover:from-green-800 dark:hover:to-teal-700">
+                        <i class="fas fa-download mr-2"></i>
+                        <span>Sonucu İndir</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl shadow-xl text-center dark:bg-gray-800">
+        <div class="mb-4 p-3 bg-primary-50 rounded-full inline-flex dark:bg-primary-900">
+            <i class="fas fa-spinner fa-spin text-primary-500 text-3xl dark:text-primary-400"></i>
+        </div>
+        <p id="loading-message" class="text-lg font-medium text-gray-800 dark:text-gray-200">Dosyalar yükleniyor...</p>
+        <p class="text-sm text-gray-500 mt-2 dark:text-gray-400">Lütfen bekleyin, bu işlem birkaç saniye sürebilir.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const browseFilesBtn = document.getElementById('browse-files');
+    const fileListContainer = document.getElementById('file-list-container');
+    const fileList = document.getElementById('file-list');
+    const clearFilesBtn = document.getElementById('clear-files');
+    
+    const promptTypeSelect = document.getElementById('prompt-type');
+    const topicContainer = document.getElementById('topic-container');
+    const topicInput = document.getElementById('topic');
+    const outputFormatContainer = document.getElementById('output-format-container');
+    const outputFormatRadios = document.querySelectorAll('input[name="output-format"]');
+    const customPromptContainer = document.getElementById('custom-prompt-container');
+    const customPromptInput = document.getElementById('custom-prompt');
+    const promptPreview = document.getElementById('prompt-preview');
+    
+    const temperatureSlider = document.getElementById('temperature');
+    const temperatureValue = document.getElementById('temperature-value');
+    const maxTokensSlider = document.getElementById('max-tokens');
+    const maxTokensValue = document.getElementById('max-tokens-value');
+    
+    const startProcessingBtn = document.getElementById('start-processing');
+    const resultsModal = document.getElementById('results-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+    const resultMessages = document.getElementById('result-messages');
+    const progressBar = document.getElementById('progress-bar');
+    const timeElapsed = document.getElementById('time-elapsed');
+    const resultContent = document.getElementById('result-content');
+    const resultDisplay = document.getElementById('result-display');
+    const downloadResultBtn = document.getElementById('download-result');
+    const copyResultBtn = document.getElementById('copy-result');
+    const saveToFavoritesBtn = document.getElementById('save-to-favorites');
+    
+    
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingMessage = document.getElementById('loading-message');
+    
+    // Hızlı Erişim butonları
+    const quickQABtn = document.getElementById('quick-qa');
+    const quickSummaryBtn = document.getElementById('quick-summary');
+    const quickCustomBtn = document.getElementById('quick-custom');
+    
+    // Kopyalama ve Düzenleme butonları
+    const copyPromptBtn = document.getElementById('copy-prompt');
+    const editPromptBtn = document.getElementById('edit-prompt');
+    
+    // Modal işlem yönetimi
+    const managePromptTypesBtn = document.getElementById('manage-prompt-types');
+    const promptTypesModal = document.getElementById('prompt-types-modal');
+    const closePromptTypesModalBtn = document.getElementById('close-prompt-types-modal');
+    const newPromptNameInput = document.getElementById('new-prompt-name');
+    const newPromptTextInput = document.getElementById('new-prompt-text');
+    const saveNewPromptBtn = document.getElementById('save-new-prompt');
+    const savedPromptTypesList = document.getElementById('saved-prompt-types-list');
+    const savedPromptCount = document.getElementById('saved-prompt-count');
+
+    // DOM Elements eklentisi - Düzenleme modal
+    const editPromptModal = document.getElementById('edit-prompt-modal');
+    const closeEditPromptModalBtn = document.getElementById('close-edit-prompt-modal');
+    const editPromptIdInput = document.getElementById('edit-prompt-id');
+    const editPromptNameInput = document.getElementById('edit-prompt-name');
+    const editPromptTextInput = document.getElementById('edit-prompt-text');
+    const saveEditPromptBtn = document.getElementById('save-edit-prompt');
+    
+    // State management
+    let selectedFiles = [];
+    let processingStartTime = null;
+    let timerInterval = null;
+    let promptTemplates = {
+        "Soru-Cevap Üretimi": `Aşağıdaki metni analiz et, {KONU} (fine tunning metoduyla) eğiteceğimiz yapay zekamızı en iyi şekilde eğitebileceğim şekilde, **özetlenmiş** olarak, **tekrarsız** bir şekilde **farklı** soru-cevap çiftleri üret.
+**Önemli Not:** Aynı soru-cevap çiftlerini tekrar etme!
+
+JSON formatında çıktı üret:
+{
+"soru-cevaplar": [
+    {
+    "soru": "örnek soru",
+    "cevap": "örnek cevap"
+    }
+]
+}`,
+        "Metin Özeti Oluştur": `Aşağıdaki metni analiz et ve kapsamlı bir özet oluştur. 
+Önemli noktaları, ana fikirleri ve temel argümanları içermelidir.
+Paragraflar halinde, akıcı ve anlaşılır bir dilde yaz.`
+    };
+    
+    // Özel işlem türlerini tutmak için
+    let customPromptTypes = [];
+    
+    // Initialize the application
+    function init() {
+        // Initial prompt preview update
+        updatePromptPreview();
+        
+        // Set up event listeners
+        setupEventListeners();
+        
+        // Özel işlem türlerini getir
+        loadCustomPromptTypes();
+        
+        // Slider değerlerinin gösterimi
+        updateSliderValues();
+    }
+    
+    function setupEventListeners() {
+        // File Upload
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+        
+        dropzone.addEventListener('drop', handleFileDrop);
+        browseFilesBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        clearFilesBtn.addEventListener('click', clearFiles);
+        
+        // Processing Options
+        promptTypeSelect.addEventListener('change', handlePromptTypeChange);
+        topicInput.addEventListener('input', updatePromptPreview);
+        customPromptInput.addEventListener('input', updatePromptPreview);
+        
+        // Output format radio değişimi
+        outputFormatRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                // Output format değiştiğinde işlem yapmaya gerek yok
+            });
+        });
+        
+        // Slider değişimleri
+        temperatureSlider.addEventListener('input', updateSliderValues);
+        maxTokensSlider.addEventListener('input', updateSliderValues);
+        
+        // Model Selection
+        document.getElementById('model-select').addEventListener('change', function() {
+            const selectedModel = this.value;
+            const modelInfo = document.getElementById('model-info');
+            
+            if (selectedModel === 'llama') {
+                modelInfo.textContent = 'AnythingLLM üzerinden Llama modeli kullanılacak. Görsel içeren dosyalar için Vision özellikleri kullanılabilir.';
+            } else {
+                modelInfo.textContent = 'Google\'ın Gemini AI modelini kullanarak işlem yapılacak.';
+            }
+        });
+        
+        // Processing
+        startProcessingBtn.addEventListener('click', startProcessing);
+        closeModalBtn.addEventListener('click', () => {
+            resultsModal.classList.add('hidden');
+            clearInterval(timerInterval);
+        });
+        
+        // Hızlı Erişim butonları
+        quickQABtn.addEventListener('click', () => {
+            promptTypeSelect.value = 'Soru-Cevap Üretimi';
+            handlePromptTypeChange();
+            topicContainer.scrollIntoView({ behavior: 'smooth' });
+            topicInput.focus();
+        });
+        
+        quickSummaryBtn.addEventListener('click', () => {
+            promptTypeSelect.value = 'Metin Özeti Oluştur';
+            handlePromptTypeChange();
+        });
+        
+        quickCustomBtn.addEventListener('click', () => {
+            promptTypeSelect.value = 'Özel Prompt';
+            handlePromptTypeChange();
+            customPromptInput.focus();
+        });
+        
+        // Kopyalama ve Düzenleme
+        copyPromptBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(promptPreview.textContent);
+            showToast('Prompt metni panoya kopyalandı!', 'success');
+        });
+        
+        editPromptBtn.addEventListener('click', () => {
+            if (promptTypeSelect.value === 'Özel Prompt') {
+                customPromptInput.focus();
+            } else {
+                promptTypeSelect.value = 'Özel Prompt';
+                handlePromptTypeChange();
+                customPromptInput.value = promptPreview.textContent;
+                customPromptInput.focus();
+            }
+        });
+        
+        // Result actions
+        copyResultBtn && copyResultBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(resultDisplay.textContent);
+            showToast('Sonuç metni panoya kopyalandı!', 'success');
+        });
+        
+        saveToFavoritesBtn && saveToFavoritesBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.classList.replace('far', 'fas');
+                icon.classList.add('text-yellow-500');
+                showToast('Sonuç favorilere eklendi!', 'success');
+            } else {
+                icon.classList.replace('fas', 'far');
+                icon.classList.remove('text-yellow-500');
+                showToast('Sonuç favorilerden çıkarıldı!', 'info');
+            }
+        });
+        
+        // Özel İşlem Türleri
+        managePromptTypesBtn.addEventListener('click', openPromptTypesModal);
+        closePromptTypesModalBtn.addEventListener('click', closePromptTypesModal);
+        saveNewPromptBtn.addEventListener('click', saveNewPromptType);
+        
+        // Düzenleme modal event listener
+        closeEditPromptModalBtn.addEventListener('click', closeEditPromptModal);
+        saveEditPromptBtn.addEventListener('click', updatePromptType);
+    }
+    
+    // Slider değerlerini güncelleme
+    function updateSliderValues() {
+        temperatureValue.textContent = temperatureSlider.value;
+        maxTokensValue.textContent = maxTokensSlider.value;
+    }
+    
+    // File Upload Functions
+    function handleFileDrop(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length > 0) {
+            uploadFiles(e.dataTransfer.files);
+        }
+    }
+    
+    function handleFileSelect(e) {
+        if (fileInput.files.length > 0) {
+            uploadFiles(fileInput.files);
+        }
+    }
+    
+    async function uploadFiles(files) {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        
+        try {
+            showLoading('Dosyalar yükleniyor...');
+            
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                selectedFiles = [...selectedFiles, ...data.files];
+                updateFileList();
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message, 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            showToast('Dosya yüklenirken bir hata oluştu!', 'error');
+            console.error('Error uploading files:', error);
+        }
+    }
+    
+    function updateFileList() {
+        fileList.innerHTML = '';
+        
+        if (selectedFiles.length > 0) {
+            fileListContainer.classList.remove('hidden');
+            
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'px-4 py-3 flex items-center justify-between transition-all hover:bg-gray-50 dark:hover:bg-gray-700';
+                
+                const fileIcon = getFileIcon(file.type);
+                
+                fileItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 mr-3 dark:bg-gray-700">
+                            <i class="${fileIcon} text-gray-500 dark:text-gray-400"></i>
+                        </div>
+                        <div>
+                            <div class="text-gray-800 dark:text-gray-200">${file.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${getFileTypeDisplay(file.type)}</div>
+                        </div>
+                    </div>
+                    <button type="button" data-index="${index}" class="remove-file text-gray-400 hover:text-red-500 transition p-1">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+            
+            // Add remove file event listeners
+            document.querySelectorAll('.remove-file').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    
+                    // Removing animation
+                    const fileItem = this.closest('div');
+                    fileItem.style.opacity = '0';
+                    fileItem.style.transform = 'translateX(10px)';
+                    fileItem.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        selectedFiles.splice(index, 1);
+                        updateFileList();
+                    }, 300);
+                });
+            });
+        } else {
+            fileListContainer.classList.add('hidden');
+        }
+    }
+    
+    function getFileIcon(fileType) {
+        switch (fileType) {
+            case 'pdf': return 'fas fa-file-pdf text-red-500';
+            case 'image': return 'fas fa-file-image text-blue-500';
+            case 'text': return 'fas fa-file-alt text-gray-500';
+            case 'word': return 'fas fa-file-word text-blue-700';
+            case 'json': return 'fas fa-file-code text-yellow-500';
+            default: return 'fas fa-file text-gray-500';
+        }
+    }
+    
+    function getFileTypeDisplay(fileType) {
+        switch (fileType) {
+            case 'pdf': return 'PDF Dosyası';
+            case 'image': return 'Görüntü Dosyası';
+            case 'text': return 'Metin Dosyası';
+            case 'word': return 'Word Dosyası';
+            case 'json': return 'JSON Dosyası';
+            default: return 'Dosya';
+        }
+    }
+    
+    function clearFiles() {
+        // Animasyonlu temizleme
+        fileList.style.opacity = '0';
+        fileList.style.transform = 'translateY(-10px)';
+        fileList.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+            selectedFiles = [];
+            updateFileList();
+            fileList.style.opacity = '1';
+            fileList.style.transform = 'translateY(0)';
+        }, 300);
+        
+        showToast('Tüm dosyalar temizlendi', 'info');
+    }
+    
+    // Processing Options Functions - Değiştirildi
+    function handlePromptTypeChange() {
+        const selectedValue = promptTypeSelect.value;
+        
+        // Tüm konteynerları gizle
+        topicContainer.classList.add('hidden');
+        outputFormatContainer.classList.add('hidden');
+        customPromptContainer.classList.add('hidden');
+        
+        // Seçilen işlem türüne göre ilgili konteynerları göster
+        if (selectedValue === 'Soru-Cevap Üretimi') {
+            topicContainer.classList.remove('hidden');
+            topicContainer.style.animation = 'fadeIn 0.3s ease forwards';
+        } else if (selectedValue === 'Metin Özeti Oluştur') {
+            outputFormatContainer.classList.remove('hidden');
+            outputFormatContainer.style.animation = 'fadeIn 0.3s ease forwards';
+        } else if (selectedValue === 'Özel Prompt') {
+            customPromptContainer.classList.remove('hidden');
+            customPromptContainer.style.animation = 'fadeIn 0.3s ease forwards';
+        }
+        
+        updatePromptPreview();
+    }
+    
+    // Güncellenen prompt önizleme
+    function updatePromptPreview() {
+        const selectedValue = promptTypeSelect.value;
+        let promptText = '';
+        
+        if (selectedValue === 'Özel Prompt') {
+            promptText = customPromptInput.value || "Özel promptunuzu yazın...";
+        } else if (selectedValue === 'Soru-Cevap Üretimi') {
+            promptText = promptTemplates[selectedValue].replace('{KONU}', topicInput.value || '[KONU]');
+        } else if (selectedValue === 'Metin Özeti Oluştur') {
+            promptText = promptTemplates[selectedValue];
+        } else if (selectedValue.startsWith('custom_')) {
+            // Özel işlem türü seçildi
+            const promptId = selectedValue.replace('custom_', '');
+            const customType = customPromptTypes.find(pt => pt.id == promptId);
+            if (customType) {
+                promptText = customType.prompt_text;
+            }
+        }
+        
+        // Animasyonlu güncelleme
+        promptPreview.style.opacity = '0.6';
+        promptPreview.style.transform = 'translateY(-5px)';
+        
+        setTimeout(() => {
+            promptPreview.textContent = promptText;
+            promptPreview.style.opacity = '1';
+            promptPreview.style.transform = 'translateY(0)';
+        }, 200);
+        
+        // Stil geçişi
+        promptPreview.style.transition = 'all 0.3s ease';
+    }
+
+    // Dosya yükleme işlemleri için düzeltmeler
+    async function uploadFiles(files) {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        
+        try {
+            showLoading('Dosyalar yükleniyor...');
+            
+            // Gerçek API çağrısı yapılıyor
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                selectedFiles = [...selectedFiles, ...data.files];
+                updateFileList();
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message || 'Dosya yükleme hatası', 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Dosya yükleme hatası:', error);
+            
+            // Eğer API yanıt vermiyorsa, geliştirme amaçlı olarak demo veri ekleyelim
+            // NOT: Bu kısım sadece geliştirme aşamasında kullanılmalı, canlıya alırken kaldırılmalıdır
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                console.log('Demo veri ekleniyor...');
+                // Demo veri ekleme
+                selectedFiles.push({
+                    name: "ornek_dosya.pdf",
+                    path: "/uploads/ornek_dosya.pdf",
+                    type: "pdf"
+                });
+                updateFileList();
+                showToast('Demo dosya eklendi (gerçek api çağrısı başarısız oldu)', 'info');
+            } else {
+                showToast('Dosya yüklenirken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // İşlem başlatma için düzeltmeler
+    async function startProcessing() {
+        if (selectedFiles.length === 0) {
+            showToast('Lütfen en az bir dosya seçin!', 'error');
+            // Dosya yükleme alanına scroll ve hafif animasyon
+            dropzone.scrollIntoView({ behavior: 'smooth' });
+            dropzone.classList.add('animate-pulse');
+            setTimeout(() => {
+                dropzone.classList.remove('animate-pulse');
+            }, 2000);
+            return;
+        }
+        
+        const selectedValue = promptTypeSelect.value;
+        let promptType, customPromptId, customPromptText;
+        
+        // İşlem başlangıç zamanını kaydet
+        processingStartTime = new Date();
+        updateTimer();
+        
+        // İşlem türünü belirle
+        if (selectedValue.startsWith('custom_')) {
+            promptType = 'Özel İşlem Türü';
+            customPromptId = selectedValue.replace('custom_', '');
+            const customType = customPromptTypes.find(pt => pt.id == customPromptId);
+            if (customType) {
+                customPromptText = customType.prompt_text;
+            } else {
+                showToast('Seçilen işlem türü bulunamadı!', 'error');
+                return;
+            }
+        } else {
+            promptType = selectedValue;
+        }
+        
+        // Prepare request data
+        const processingModeSelect = document.getElementById('processing-mode');
+        let outputFormat = "TXT";
+        
+        // Radio butonlardan seçilen çıktı formatını al (eğer seçilmişse)
+        outputFormatRadios.forEach(radio => {
+            if (radio.checked) {
+                outputFormat = radio.value;
+            }
+        });
+        
+        const temperatureValue = temperatureSlider ? temperatureSlider.value : 0.7;
+        const maxTokens = maxTokensSlider ? maxTokensSlider.value : 2048;
+        
+        const requestData = {
+            model: document.getElementById('model-select').value, // Model seçimi
+            files: selectedFiles,
+            prompt_type: promptType,
+            topic: topicInput.value,
+            custom_prompt: selectedValue.startsWith('custom_') ? customPromptText : customPromptInput.value,
+            output_format: outputFormat,
+            is_custom_type: selectedValue.startsWith('custom_'),
+            processing_mode: processingModeSelect.value,
+            temperature: parseFloat(temperatureValue),
+            max_tokens: parseInt(maxTokens)
+        };
+        
+        try {
+            // Reset the results modal
+            resultMessages.innerHTML = '<div class="text-center text-gray-500 italic dark:text-gray-400">İşlem başlatılıyor...</div>';
+            resultContent.classList.add('hidden');
+            progressBar.style.width = '0%';
+            document.getElementById('progress-percentage').textContent = '0%';
+            document.getElementById('processing-text').textContent = 'İşlem Devam Ediyor...';
+            document.getElementById('processing-icon').className = 'fas fa-spinner fa-spin text-primary-500 dark:text-primary-400';
+            
+            // Timer'ı başlat
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Show results modal
+            resultsModal.classList.remove('hidden');
+            
+            // Gerçek API çağrısı yapılıyor
+            const response = await fetch('/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+            });
+            
+            const data = await response.json();
+            
+            processAPIResponse(data);
+        } catch (error) {
+            console.error('İşlem hatası:', error);
+            
+            // Eğer API yanıt vermiyorsa, geliştirme amaçlı olarak demo veri gösterelim
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                console.log('Demo sonuç gösteriliyor...');
+                showDemoResults(promptType);
+            } else {
+                resultMessages.innerHTML = '';
+                addResultMessage('error', 'İşlem sırasında bir hata oluştu: ' + error.message);
+                progressBar.style.width = '100%';
+                document.getElementById('progress-percentage').textContent = '100%';
+                document.getElementById('processing-text').textContent = 'İşlem Başarısız';
+                document.getElementById('processing-icon').className = 'fas fa-times-circle text-red-500 dark:text-red-400';
+                clearInterval(timerInterval);
+            }
+        }
+    }
+
+    // API yanıtını işleme
+    function processAPIResponse(data) {
+        if (!data.success) {
+            resultMessages.innerHTML = ''; // Temizle
+            addResultMessage('error', data.message || 'İşlem tamamlanamadı');
+            progressBar.style.width = '100%';
+            document.getElementById('progress-percentage').textContent = '100%';
+            document.getElementById('processing-text').textContent = 'İşlem Tamamlanamadı';
+            document.getElementById('processing-icon').className = 'fas fa-times-circle text-red-500 dark:text-red-400';
+            clearInterval(timerInterval);
+            return;
+        }
+        
+        // Process messages
+        resultMessages.innerHTML = ''; // Temizle
+        
+        if (data.messages && data.messages.length > 0) {
+            let progressPercentage = 0;
+            
+            // Mesajları göster ve ilerleme çubuğu animasyonu
+            (function showMessages(index) {
+                if (index >= data.messages.length) {
+                    // Tüm mesajlar gösterildi, sonuçları göster
+                    showResults(data);
+                    return;
+                }
+                
+                const message = data.messages[index];
+                addResultMessage(message.type, message.text);
+                
+                // İlerleme çubuğunu güncelle
+                progressPercentage = Math.min(90, Math.round((index + 1) / data.messages.length * 100));
+                progressBar.style.width = progressPercentage + '%';
+                document.getElementById('progress-percentage').textContent = progressPercentage + '%';
+                
+                // Sonraki mesaj için 300ms bekle
+                setTimeout(() => showMessages(index + 1), 300);
+            })(0);
+        } else {
+            // Mesaj yoksa doğrudan sonuçları göster
+            showResults(data);
+        }
+    }
+
+    // Sonuçları gösterme
+    function showResults(data) {
+        if (data.results) {
+            // Sonuçları göstermeden önce yükleme animasyonu
+            resultDisplay.innerHTML = `<div class="flex justify-center items-center h-32">
+                <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-500 dark:border-primary-400"></div>
+            </div>`;
+            
+            resultContent.classList.remove('hidden');
+            resultContent.style.animation = 'fadeIn 0.5s ease forwards';
+            
+            // Küçük bir gecikmeyle sonuçları göster (yükleme animasyonu için)
+            setTimeout(() => {
+                if (data.results.type === 'summary') {
+                    resultDisplay.innerHTML = `<div class="whitespace-pre-wrap">${data.results.content}</div>`;
+                } else if (data.results.type === 'qa_pairs') {
+                    const qaPairs = data.results.content["soru-cevaplar"];
+                    let html = '<div class="space-y-4">';
+                    
+                    qaPairs.forEach((pair, index) => {
+                        html += `
+                            <div class="border-b pb-3 mb-3 dark:border-gray-600">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center mr-2 dark:bg-primary-900">
+                                        <span class="text-xs font-bold text-primary-700 dark:text-primary-400">${index + 1}</span>
+                                    </div>
+                                    <div class="font-semibold text-primary-700 dark:text-primary-400">Soru:</div>
+                                </div>
+                                <div class="mb-3 pl-8">${pair.soru}</div>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-2 dark:bg-green-900">
+                                        <i class="fas fa-check text-xs text-green-700 dark:text-green-400"></i>
+                                    </div>
+                                    <div class="font-semibold text-green-700 dark:text-green-400">Cevap:</div>
+                                </div>
+                                <div class="pl-8">${pair.cevap}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    resultDisplay.innerHTML = html;
+                } else if (data.results.type === 'custom') {
+                    // Özel işlem türü sonuçları
+                    resultDisplay.innerHTML = `<div class="whitespace-pre-wrap">${data.results.content}</div>`;
+                }
+                
+                // Set download link
+                if (data.results.download_url) {
+                    downloadResultBtn.href = data.results.download_url;
+                }
+                
+                // Set result ID
+                if (document.getElementById('result-id')) {
+                    document.getElementById('result-id').textContent = `${new Date().getTime().toString(36)}`;
+                }
+                
+                // Add final success message
+                addResultMessage('success', 'İşlem başarıyla tamamlandı!');
+                
+                // İşlem durumunu güncelle
+                document.getElementById('processing-text').textContent = 'İşlem Tamamlandı';
+                document.getElementById('processing-icon').className = 'fas fa-check-circle text-green-500 dark:text-green-400';
+                
+                // Complete progress bar
+                progressBar.style.width = '100%';
+                document.getElementById('progress-percentage').textContent = '100%';
+                
+                // Timer'ı durdur
+                clearInterval(timerInterval);
+            }, 800);
+        } else {
+            // Sonuçlar yoksa hata mesajı göster
+            addResultMessage('warning', 'Sonuç verileri alınamadı.');
+            progressBar.style.width = '100%';
+            document.getElementById('progress-percentage').textContent = '100%';
+            document.getElementById('processing-text').textContent = 'İşlem Tamamlandı (Uyarı)';
+            document.getElementById('processing-icon').className = 'fas fa-exclamation-circle text-yellow-500 dark:text-yellow-400';
+            clearInterval(timerInterval);
+        }
+    }
+
+    // Demo sonuçları gösterme (sadece geliştirme aşamasında kullanılmalı)
+    function showDemoResults(promptType) {
+        resultMessages.innerHTML = '';
+        
+        // Demo ilerleme mesajları
+        const demoMessages = [
+            { type: 'info', text: 'Dosyalar işleniyor...' },
+            { type: 'success', text: 'Dosya içeriği başarıyla çıkarıldı.' },
+            { type: 'info', text: 'AI modeline gönderiliyor...' },
+            { type: 'info', text: 'İşlem devam ediyor (%25)' },
+            { type: 'info', text: 'İşlem devam ediyor (%50)' },
+            { type: 'info', text: 'İşlem devam ediyor (%75)' },
+            { type: 'success', text: 'AI model işlemi tamamladı.' }
+        ];
+        
+        // İlerleme mesajlarını göster
+        (function showDemoMessage(index) {
+            if (index >= demoMessages.length) {
+                // Sonuçları göster
+                let demoContent = '';
+                let demoType = '';
+                
+                if (promptType === 'Soru-Cevap Üretimi') {
+                    demoType = 'qa_pairs';
+                    demoContent = {
+                        "soru-cevaplar": [
+                            {
+                                "soru": "Yapay zekanın eğitim alanındaki temel avantajları nelerdir?",
+                                "cevap": "Yapay zekanın eğitimde kullanımının temel avantajları arasında kişiselleştirilmiş öğrenme deneyimi sunması, öğretmenlerin idari yükünü azaltması, erişilebilirliği artırması ve gerçek zamanlı geri bildirim sağlaması yer almaktadır."
+                            },
+                            {
+                                "soru": "Öğrenme analitiği nasıl öğrenci başarısını artırabilir?",
+                                "cevap": "Öğrenme analitiği, öğrenci verilerini toplayıp analiz ederek öğrenme süreçlerindeki eksiklikleri tespit eder, ilerleyişi takip eder ve kişiselleştirilmiş öğrenme planları oluşturarak öğrenci başarısını artırabilir."
+                            },
+                            {
+                                "soru": "Eğitimde yapay zeka kullanımının etik zorlukları nelerdir?",
+                                "cevap": "Eğitimde yapay zeka kullanımının etik zorlukları arasında veri gizliliği ve güvenliği sorunları, algoritmik önyargılar, dijital eşitsizlik, insan etkileşiminin azalması ve öğretmenlerin rolünün değişmesi gibi konular bulunmaktadır."
+                            }
+                        ]
+                    };
+                } else if (promptType === 'Metin Özeti Oluştur') {
+                    demoType = 'summary';
+                    demoContent = "Bu metinde, yapay zekanın eğitim alanındaki etkisi ve geleceği ele alınmaktadır. Yapay zeka teknolojileri, kişiselleştirilmiş öğrenme deneyimleri sunarak her öğrencinin kendi hızında ve öğrenme stiline uygun şekilde ilerlemesini sağlamaktadır. Öğrenme analitiği ve adaptif öğrenme sistemleri, öğrencilerin güçlü ve zayıf yönlerini tespit ederek öğrenme sürecini optimize etmektedir.\n\nÖğretmenler için ise yapay zeka, idari görevlerin otomatizasyonu, değerlendirme süreçlerinin hızlandırılması ve eğitim içeriklerinin zenginleştirilmesi gibi avantajlar sunmaktadır. Ancak yapay zekanın eğitimde kullanımı, veri gizliliği, algoritmik önyargılar ve dijital eşitsizlik gibi etik sorunları da beraberinde getirmektedir.\n\nGeleceğe bakıldığında, yapay zeka ve eğitim entegrasyonunun daha da derinleşeceği, sanal gerçeklik ve artırılmış gerçeklik gibi teknolojilerle birleşerek yeni öğrenme ortamları yaratacağı öngörülmektedir. Bununla birlikte, bu teknolojilerin başarısı için öğretmenlerin dijital okuryazarlığının artırılması ve teknoloji-pedagoji entegrasyonunun sağlanması gerekmektedir.";
+                } else {
+                    demoType = 'custom';
+                    demoContent = "Özel işlem türü için demo içerik. Bu içerik, AI model tarafından oluşturulmuş bir içerik değildir ve sadece gösterim amaçlıdır. Gerçek bir API yanıtı alınamadığı için bu demo içerik gösterilmektedir.\n\nGerçek kullanımda, burada seçilen işlem türüne göre AI model tarafından üretilmiş bir içerik göreceksiniz.";
+                }
+                
+                // Sonuçları göster
+                resultDisplay.innerHTML = demoType === 'qa_pairs' 
+                    ? formatQAPairs(demoContent["soru-cevaplar"]) 
+                    : `<div class="whitespace-pre-wrap">${demoContent}</div>`;
+                
+                resultContent.classList.remove('hidden');
+                if (document.getElementById('result-id')) {
+                    document.getElementById('result-id').textContent = `demo_${new Date().getTime().toString(36)}`;
+                }
+                
+                addResultMessage('warning', 'Not: Bu bir demo sonuçtur. Gerçek API yanıtı alınamadı.');
+                addResultMessage('success', 'Demo işlem tamamlandı!');
+                
+                document.getElementById('processing-text').textContent = 'Demo İşlem Tamamlandı';
+                document.getElementById('processing-icon').className = 'fas fa-check-circle text-green-500 dark:text-green-400';
+                progressBar.style.width = '100%';
+                document.getElementById('progress-percentage').textContent = '100%';
+                
+                clearInterval(timerInterval);
+                return;
+            }
+            
+            const message = demoMessages[index];
+            addResultMessage(message.type, message.text);
+            
+            // İlerleme çubuğunu güncelle
+            const progressPercentage = Math.min(90, Math.round((index + 1) / demoMessages.length * 100));
+            progressBar.style.width = progressPercentage + '%';
+            document.getElementById('progress-percentage').textContent = progressPercentage + '%';
+            
+            // Sonraki mesaj
+            setTimeout(() => showDemoMessage(index + 1), 800);
+        })(0);
+    }
+
+    // Soru-cevap çiftlerini formatlama (gösterim için)
+    function formatQAPairs(qaPairs) {
+        let html = '<div class="space-y-4">';
+        
+        qaPairs.forEach((pair, index) => {
+            html += `
+                <div class="border-b pb-3 mb-3 dark:border-gray-600">
+                    <div class="flex items-center mb-2">
+                        <div class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center mr-2 dark:bg-primary-900">
+                            <span class="text-xs font-bold text-primary-700 dark:text-primary-400">${index + 1}</span>
+                        </div>
+                        <div class="font-semibold text-primary-700 dark:text-primary-400">Soru:</div>
+                    </div>
+                    <div class="mb-3 pl-8">${pair.soru}</div>
+                    <div class="flex items-center mb-2">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-2 dark:bg-green-900">
+                            <i class="fas fa-check text-xs text-green-700 dark:text-green-400"></i>
+                        </div>
+                        <div class="font-semibold text-green-700 dark:text-green-400">Cevap:</div>
+                    </div>
+                    <div class="pl-8">${pair.cevap}</div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        return html;
+    }
+
+    // Timer güncelleme
+    function updateTimer() {
+        if (!processingStartTime || !timeElapsed) return;
+        
+        const now = new Date();
+        const elapsedMs = now - processingStartTime;
+        const seconds = Math.floor(elapsedMs / 1000) % 60;
+        const minutes = Math.floor(elapsedMs / 1000 / 60);
+        
+        timeElapsed.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Özel işlem türü ekleme
+    async function saveNewPromptType() {
+        const name = newPromptNameInput.value.trim();
+        const promptText = newPromptTextInput.value.trim();
+        
+        if (!name || !promptText) {
+            showToast('İşlem türü adı ve prompt metni gereklidir.', 'error');
+            return;
+        }
+        
+        try {
+            showLoading('İşlem türü kaydediliyor...');
+            
+            // Gerçek API çağrısı
+            const response = await fetch('/api/custom-prompt-types', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    prompt_text: promptText
+                }),
+            });
+            
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                showToast(data.message || 'İşlem türü başarıyla kaydedildi.', 'success');
+                newPromptNameInput.value = '';
+                newPromptTextInput.value = '';
+                
+                // Yeni eklenen işlem türünü doğrudan customPromptTypes'a ekle
+                if (data.custom_prompt_type) {
+                    // Eğer zaten varsa güncelle, yoksa ekle
+                    const existingIndex = customPromptTypes.findIndex(pt => pt.id === data.custom_prompt_type.id);
+                    if (existingIndex !== -1) {
+                        customPromptTypes[existingIndex] = data.custom_prompt_type;
+                    } else {
+                        customPromptTypes.push(data.custom_prompt_type);
+                    }
+                    
+                    // UI'ı güncelle
+                    updatePromptTypesList();
+                    updatePromptTypeSelect();
+                }
+            } else {
+                showToast(data.message || 'İşlem türü kaydedilemedi.', 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error saving custom prompt type:', error);
+            
+            // Geliştirme aşamasında demo veri ekle
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                // Demo işlem türü ekle
+                const newId = customPromptTypes.length > 0 
+                    ? Math.max(...customPromptTypes.map(p => p.id)) + 1 
+                    : 1;
+                    
+                const newPromptType = {
+                    id: newId,
+                    name: name,
+                    prompt_text: promptText,
+                    created_at: new Date().toISOString()
+                };
+                
+                customPromptTypes.push(newPromptType);
+                updatePromptTypesList();
+                updatePromptTypeSelect();
+                
+                showToast('Demo işlem türü eklendi (API yanıt vermediği için)', 'info');
+                newPromptNameInput.value = '';
+                newPromptTextInput.value = '';
+            } else {
+                showToast('İşlem türü kaydedilirken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // İşlem türü silme
+    async function deletePromptType(promptId) {
+        if (!confirm('Bu işlem türünü silmek istediğinizden emin misiniz?')) {
+            return;
+        }
+        
+        try {
+            showLoading('İşlem türü siliniyor...');
+            
+            // Gerçek API çağrısı
+            const response = await fetch(`/api/custom-prompt-types/${promptId}`, {
+                method: 'DELETE',
+            });
+            
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                showToast(data.message || 'İşlem türü başarıyla silindi.', 'success');
+                
+                // Silinen işlem türünü doğrudan customPromptTypes'dan kaldır
+                if (data.deleted_id) {
+                    const index = customPromptTypes.findIndex(pt => pt.id == data.deleted_id);
+                    if (index !== -1) {
+                        customPromptTypes.splice(index, 1);
+                        
+                        // Eğer silinen işlem türü seçili ise, varsayılan seçeneğe dön
+                        if (promptTypeSelect.value === `custom_${data.deleted_id}`) {
+                            promptTypeSelect.value = 'Soru-Cevap Üretimi';
+                        }
+                        
+                        // UI'ı güncelle
+                        updatePromptTypesList();
+                        updatePromptTypeSelect();
+                    }
+                }
+            } else {
+                showToast(data.message || 'İşlem türü silinemedi.', 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error deleting custom prompt type:', error);
+            
+            // Geliştirme aşamasında lokal silme işlemi yap
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                const index = customPromptTypes.findIndex(pt => pt.id == promptId);
+                if (index !== -1) {
+                    customPromptTypes.splice(index, 1);
+                    
+                    // Eğer silinen işlem türü seçili ise, varsayılan seçeneğe dön
+                    if (promptTypeSelect.value === `custom_${promptId}`) {
+                        promptTypeSelect.value = 'Soru-Cevap Üretimi';
+                    }
+                    
+                    // UI'ı güncelle
+                    updatePromptTypesList();
+                    updatePromptTypeSelect();
+                    
+                    showToast('Demo işlem türü silindi (API yanıt vermediği için)', 'info');
+                }
+            } else {
+                showToast('İşlem türü silinirken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Özel işlem türlerini getirme (genişletilmiş)
+    async function loadCustomPromptTypes() {
+        try {
+            showLoading('İşlem türleri yükleniyor...');
+            
+            // Gerçek API çağrısı
+            const response = await fetch('/api/custom-prompt-types');
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                customPromptTypes = data.custom_prompt_types;
+                updatePromptTypesList();
+                updatePromptTypeSelect();
+                return true;
+            } else {
+                console.warn('İşlem türleri yüklenirken hata:', data.message);
+                
+                // Geliştirme aşamasında demo veri göster
+                if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    console.log('Demo işlem türleri ekleniyor...');
+                    customPromptTypes = [
+                        {
+                            id: 1,
+                            name: "Blog Yazısı Oluştur",
+                            prompt_text: "Aşağıdaki metni inceleyerek bir blog yazısı oluştur. Yazı, giriş, gelişme ve sonuç bölümlerini içermeli. Dil akıcı ve anlaşılır olmalı.",
+                            created_at: "2025-03-05T12:00:00Z"
+                        },
+                        {
+                            id: 2,
+                            name: "Anahtar Kelime Çıkarma",
+                            prompt_text: "Aşağıdaki metni analiz et ve en önemli 10 anahtar kelimeyi çıkart. Anahtar kelimeleri önem sırasına göre sırala ve neden önemli olduklarını kısaca açıkla.",
+                            created_at: "2025-03-06T15:30:00Z"
+                        }
+                    ];
+                    updatePromptTypesList();
+                    updatePromptTypeSelect();
+                    showToast('Demo işlem türleri yüklendi (API yanıt vermediği için)', 'info');
+                    return true;
+                }
+                
+                return false;
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error loading custom prompt types:', error);
+            
+            // Geliştirme aşamasında demo veri göster
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                console.log('Demo işlem türleri ekleniyor (hata sonrası)...');
+                customPromptTypes = [
+                    {
+                        id: 1,
+                        name: "Blog Yazısı Oluştur",
+                        prompt_text: "Aşağıdaki metni inceleyerek bir blog yazısı oluştur. Yazı, giriş, gelişme ve sonuç bölümlerini içermeli. Dil akıcı ve anlaşılır olmalı.",
+                        created_at: "2025-03-05T12:00:00Z"
+                    },
+                    {
+                        id: 2,
+                        name: "Anahtar Kelime Çıkarma",
+                        prompt_text: "Aşağıdaki metni analiz et ve en önemli 10 anahtar kelimeyi çıkart. Anahtar kelimeleri önem sırasına göre sırala ve neden önemli olduklarını kısaca açıkla.",
+                        created_at: "2025-03-06T15:30:00Z"
+                    }
+                ];
+                updatePromptTypesList();
+                updatePromptTypeSelect();
+                showToast('Demo işlem türleri yüklendi (API hata verdiği için)', 'info');
+            } else {
+                showToast('İşlem türleri yüklenirken bir hata oluştu: ' + error.message, 'error');
+            }
+            return false;
+        }
+    }
+
+    // İşlem türleri listesini güncelleme (genişletilmiş)
+    function updatePromptTypesList() {
+        // Sayacı güncelle
+        if (savedPromptCount) {
+            savedPromptCount.textContent = customPromptTypes.length;
+        }
+        
+        if (!savedPromptTypesList) return;
+        
+        if (customPromptTypes.length === 0) {
+            savedPromptTypesList.innerHTML = `
+                <div class="p-4 text-center bg-gray-50 rounded-lg text-gray-500 italic dark:bg-gray-700 dark:text-gray-400">
+                    <i class="far fa-folder-open text-2xl mb-2"></i>
+                    <p>Kayıtlı işlem türü bulunamadı.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        savedPromptTypesList.innerHTML = '';
+        
+        customPromptTypes.forEach((promptType) => {
+            const promptItem = document.createElement('div');
+            promptItem.className = 'p-4 bg-white border rounded-lg mb-3 hover:shadow-md transition dark:bg-gray-800 dark:border-gray-700';
+            promptItem.dataset.id = promptType.id;
+            
+            // Prompt metninin kısaltılmış preview'ı
+            const previewText = promptType.prompt_text.length > 100 
+                ? promptType.prompt_text.substring(0, 100) + '...' 
+                : promptType.prompt_text;
+            
+            // Tarih formatla
+            let formattedDate = 'Tarih belirtilmedi';
+            try {
+                if (promptType.created_at) {
+                    const date = new Date(promptType.created_at);
+                    formattedDate = date.toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                }
+            } catch (e) {
+                console.warn('Tarih formatlanırken hata:', e);
+            }
+            
+            promptItem.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <div class="font-medium text-gray-800 dark:text-gray-200">${promptType.name}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">${formattedDate}</div>
+                </div>
+                <div class="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded border font-mono text-xs overflow-hidden dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">${previewText}</div>
+                <div class="flex justify-end space-x-2">
+                    <button class="edit-prompt p-2 text-blue-500 hover:bg-blue-50 rounded hover:text-blue-700 transition dark:hover:bg-blue-900" data-id="${promptType.id}" title="Düzenle">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-prompt p-2 text-red-500 hover:bg-red-50 rounded hover:text-red-700 transition dark:hover:bg-red-900" data-id="${promptType.id}" title="Sil">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="use-prompt p-2 text-green-500 hover:bg-green-50 rounded hover:text-green-700 transition dark:hover:bg-green-900" data-id="${promptType.id}" title="Kullan">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            `;
+            
+            savedPromptTypesList.appendChild(promptItem);
+            
+            // Animasyonlu giriş
+            promptItem.style.opacity = '0';
+            promptItem.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                promptItem.style.opacity = '1';
+                promptItem.style.transform = 'translateY(0)';
+            }, 100 * (customPromptTypes.indexOf(promptType) + 1));
+            promptItem.style.transition = 'all 0.3s ease';
+        });
+        
+        // Butonlara event listener'lar ekle
+        document.querySelectorAll('.edit-prompt').forEach(button => {
+            button.addEventListener('click', function() {
+                const promptId = this.getAttribute('data-id');
+                editPromptType(promptId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-prompt').forEach(button => {
+            button.addEventListener('click', function() {
+                const promptId = this.getAttribute('data-id');
+                deletePromptType(promptId);
+            });
+        });
+        
+        document.querySelectorAll('.use-prompt').forEach(button => {
+            button.addEventListener('click', function() {
+                const promptId = this.getAttribute('data-id');
+                usePromptType(promptId);
+            });
+        });
+    }
+
+    // Select elementini güncelleme
+    function updatePromptTypeSelect() {
+        if (!promptTypeSelect) return;
+        
+        // Mevcut seçili değeri kaydet
+        const currentSelectedValue = promptTypeSelect.value;
+        
+        // Önce varsayılan opsiyonları koruyarak diğer özel türleri temizle
+        const defaultOptions = Array.from(promptTypeSelect.options)
+            .filter(option => ["Soru-Cevap Üretimi", "Metin Özeti Oluştur", "Özel Prompt"].includes(option.value));
+        
+        promptTypeSelect.innerHTML = '';
+        
+        // Varsayılan opsiyonları geri ekle
+        defaultOptions.forEach(option => {
+            promptTypeSelect.appendChild(option);
+        });
+        
+        // Özel türleri ekle
+        if (customPromptTypes.length > 0) {
+            // Ayırıcı ekle
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '──────────';
+            promptTypeSelect.appendChild(separator);
+            
+            // Özel türleri ekle
+            customPromptTypes.forEach(promptType => {
+                const option = document.createElement('option');
+                option.value = `custom_${promptType.id}`;
+                option.textContent = promptType.name;
+                promptTypeSelect.appendChild(option);
+            });
+        }
+        
+        // Eğer önceki seçili değer hala mevcutsa, onu tekrar seç
+        if (Array.from(promptTypeSelect.options).some(option => option.value === currentSelectedValue)) {
+            promptTypeSelect.value = currentSelectedValue;
+        }
+        
+        // Prompt preview'ı güncelle
+        handlePromptTypeChange();
+    }
+
+    // İşlem türünü kullanma
+    function usePromptType(promptId) {
+        const promptType = customPromptTypes.find(pt => pt.id == promptId);
+        if (!promptType) return;
+        
+        // Modal'ı kapat
+        closePromptTypesModal();
+        
+        // Dropdown'da ilgili işlem türünü seç
+        promptTypeSelect.value = `custom_${promptId}`;
+        
+        // Prompt preview'ı güncelle ve ilgili alanları göster/gizle
+        handlePromptTypeChange();
+        
+        // Başarılı mesajı göster
+        showToast(`"${promptType.name}" işlem türü seçildi`, 'success');
+    }
+
+    // İşlem Türü Düzenleme Fonksiyonları
+    function editPromptType(promptId) {
+        const promptType = customPromptTypes.find(pt => pt.id == promptId);
+        if (!promptType) return;
+        
+        // Modal alanlarını doldur
+        editPromptIdInput.value = promptType.id;
+        editPromptNameInput.value = promptType.name;
+        editPromptTextInput.value = promptType.prompt_text;
+        
+        // Modalı göster
+        editPromptModal.classList.remove('hidden');
+        editPromptNameInput.focus();
+    }
+
+    function closeEditPromptModal() {
+        editPromptModal.classList.add('hidden');
+    }
+
+    async function updatePromptType() {
+        const id = editPromptIdInput.value;
+        const name = editPromptNameInput.value.trim();
+        const promptText = editPromptTextInput.value.trim();
+        
+        if (!name || !promptText) {
+            showToast('İşlem türü adı ve prompt metni gereklidir.', 'error');
+            return;
+        }
+        
+        try {
+            showLoading('İşlem türü güncelleniyor...');
+            
+            const response = await fetch(`/api/custom-prompt-types/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name,
+                    prompt_text: promptText
+                }),
+            });
+            
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                showToast(data.message || 'İşlem türü başarıyla güncellendi.', 'success');
+                closeEditPromptModal();
+                
+                // Güncellenen işlem türünü customPromptTypes'da güncelle
+                const index = customPromptTypes.findIndex(pt => pt.id == id);
+                if (index !== -1) {
+                    customPromptTypes[index].name = name;
+                    customPromptTypes[index].prompt_text = promptText;
+                    
+                    // UI'ı güncelle
+                    updatePromptTypesList();
+                    updatePromptTypeSelect();
+                } else {
+                    // Bulunamazsa yeniden yükle
+                    await loadCustomPromptTypes();
+                }
+            } else {
+                showToast(data.message || 'İşlem türü güncellenemedi.', 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error updating custom prompt type:', error);
+            
+            // Geliştirme modu için
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                // Demo güncelleme
+                const index = customPromptTypes.findIndex(pt => pt.id == id);
+                if (index !== -1) {
+                    customPromptTypes[index].name = name;
+                    customPromptTypes[index].prompt_text = promptText;
+                    
+                    // UI'ı güncelle
+                    updatePromptTypesList();
+                    updatePromptTypeSelect();
+                    
+                    showToast('Demo işlem türü güncellendi (API yanıt vermediği için)', 'info');
+                    closeEditPromptModal();
+                }
+            } else {
+                showToast('İşlem türü güncellenirken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Modal Açma/Kapama Fonksiyonları
+    function openPromptTypesModal() {
+        promptTypesModal.classList.remove('hidden');
+        // Modal açıldığında işlem türlerini yükle
+        loadCustomPromptTypes();
+    }
+
+    function closePromptTypesModal() {
+        promptTypesModal.classList.add('hidden');
+    }
+
+    // Toast Mesajı Gösterme Fonksiyonu
+    function showToast(message, type = 'info') {
+        // Mevcut toast'ları temizle
+        const existingToasts = document.querySelectorAll('.toast-notification');
+        existingToasts.forEach(toast => toast.remove());
+        
+        // Toast container oluştur veya mevcut olanı kullan
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'fixed top-4 right-4 z-50';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Toast oluştur
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification px-4 py-3 rounded-lg shadow-lg mb-2 transform translate-y-0 opacity-100 transition-all duration-300';
+        
+        // Tip bazında stil
+        let icon;
+        switch (type) {
+            case 'success':
+                toast.classList.add('bg-green-500', 'text-white');
+                icon = 'fa-check-circle';
+                break;
+            case 'error':
+                toast.classList.add('bg-red-500', 'text-white');
+                icon = 'fa-exclamation-circle';
+                break;
+            case 'warning':
+                toast.classList.add('bg-yellow-500', 'text-white');
+                icon = 'fa-exclamation-triangle';
+                break;
+            default:
+                toast.classList.add('bg-blue-500', 'text-white');
+                icon = 'fa-info-circle';
+        }
+        
+        // Toast içeriği
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${icon} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Container'a ekle
+        toastContainer.appendChild(toast);
+        
+        // Belirli süre sonra kaldır
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Loading Gösterme/Gizleme Fonksiyonları
+    function showLoading(message) {
+        loadingMessage.textContent = message || 'İşlem yapılıyor...';
+        loadingOverlay.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        loadingOverlay.classList.add('hidden');
+    }
+
+    // Sonuç Mesajı Ekleme Fonksiyonu
+    function addResultMessage(type, text) {
+        const iconClass = {
+            'info': 'fas fa-info-circle text-blue-500 dark:text-blue-400',
+            'success': 'fas fa-check-circle text-green-500 dark:text-green-400',
+            'warning': 'fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400',
+            'error': 'fas fa-exclamation-circle text-red-500 dark:text-red-400'
+        };
+        
+        const backgroundClass = {
+            'info': 'bg-blue-50 dark:bg-blue-900/30',
+            'success': 'bg-green-50 dark:bg-green-900/30',
+            'warning': 'bg-yellow-50 dark:bg-yellow-900/30',
+            'error': 'bg-red-50 dark:bg-red-900/30'
+        };
+        
+        const message = document.createElement('div');
+        message.className = `p-3 rounded-lg ${backgroundClass[type]} animate-fade-in`;
+        message.innerHTML = `
+            <div class="flex items-start">
+                <i class="${iconClass[type]} mt-1 mr-2"></i>
+                <span class="dark:text-gray-200">${text}</span>
+            </div>
+        `;
+        
+        resultMessages.appendChild(message);
+        message.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // Bu fonksiyonları JavaScript kodunuza ekleyin
+
+    // Son işlemleri getir
+    async function loadRecentProcessings() {
+        try {
+            const response = await fetch('/api/recent-processings?limit=3');
+            const data = await response.json();
+            
+            if (data.success) {
+                renderRecentProcessings(data.logs);
+            } else {
+                console.warn('Son işlemler yüklenemedi:', data.message);
+                // Geliştirme aşamasında boş kalmamak için demo veriler göster
+                renderDemoRecentProcessings();
+            }
+        } catch (error) {
+            console.error('Son işlemler yüklenirken hata:', error);
+            // Hata durumunda demo veriler
+            renderDemoRecentProcessings();
+        }
+    }
+
+    // Son işlemleri listele
+    function renderRecentProcessings(logs) {
+        const recentLogsContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.gap-4');
+        if (!recentLogsContainer) return;
+        
+        // Eğer işlem yoksa
+        if (!logs || logs.length === 0) {
+            recentLogsContainer.innerHTML = `
+                <div class="col-span-3 p-6 bg-gray-50 rounded-xl shadow text-center dark:bg-gray-800">
+                    <i class="fas fa-history text-gray-400 text-3xl mb-2 dark:text-gray-500"></i>
+                    <p class="text-gray-500 dark:text-gray-400">Henüz işlem kaydı bulunmuyor.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        recentLogsContainer.innerHTML = '';
+        
+        logs.forEach(log => {
+            // İşlem tipine göre renk ve ikon belirleme
+            let typeClass, typeText;
+            
+            if (log.prompt_type.includes('Özet')) {
+                typeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                typeText = 'Özet';
+            } else if (log.prompt_type.includes('Soru-Cevap')) {
+                typeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                typeText = 'Soru-Cevap';
+            } else {
+                typeClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                typeText = 'Özel';
+            }
+            
+            // Tarih formatla
+            let formattedDate;
+            try {
+                formattedDate = new Date(log.timestamp).toLocaleDateString('tr-TR');
+            } catch (e) {
+                formattedDate = log.timestamp || "Tarih bilinmiyor";
+            }
+            
+            // Dosya adları kısaltma
+            let filesText = log.files;
+            if (filesText && filesText.length > 30) {
+                filesText = filesText.substring(0, 27) + '...';
+            }
+            
+            const logItem = document.createElement('div');
+            logItem.className = 'bg-white p-4 rounded-xl shadow transition-all cursor-pointer hover:shadow-md card-hover dark:bg-gray-800';
+            logItem.dataset.id = log.id;
+            
+            logItem.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="${typeClass} text-xs px-2 py-1 rounded-full">${typeText}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">${formattedDate}</div>
+                </div>
+                <h4 class="font-medium mb-1 dark:text-gray-200">${log.prompt_type}</h4>
+                <p class="text-sm text-gray-600 mb-3 line-clamp-2 dark:text-gray-400">${filesText}</p>
+                <div class="flex justify-end">
+                    <button class="view-log-btn text-primary-600 hover:text-primary-700 text-sm dark:text-primary-400 dark:hover:text-primary-300">
+                        Sonucu Görüntüle
+                    </button>
+                </div>
+            `;
+            
+            // Tıklama olayı
+            logItem.addEventListener('click', () => viewLogDetail(log.id));
+            
+            recentLogsContainer.appendChild(logItem);
+        });
+    }
+
+    // Demo işlemleri göster
+    function renderDemoRecentProcessings() {
+        const logs = [
+            {
+                id: 101,
+                prompt_type: 'Soru-Cevap Üretimi',
+                files: 'ornek_dosya1.pdf, ornek_dosya2.txt',
+                timestamp: new Date().toISOString(),
+                success: true
+            },
+            {
+                id: 102,
+                prompt_type: 'Metin Özeti Oluştur',
+                files: 'makale.docx',
+                timestamp: new Date().toISOString(),
+                success: true
+            },
+            {
+                id: 103,
+                prompt_type: 'Özel Analiz',
+                files: 'veri.json',
+                timestamp: new Date().toISOString(),
+                success: true
+            }
+        ];
+        
+        renderRecentProcessings(logs);
+    }
+
+    // İşlem detayını görüntüle
+    async function viewLogDetail(logId) {
+        try {
+            showLoading('İşlem detayları yükleniyor...');
+            
+            const response = await fetch(`/api/log-details/${logId}`);
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.success) {
+                // Detay modalını göstermek için sonuç modalını kullan
+                const log = data.log;
+                
+                // Modal içeriğini temizle ve yeniden yapılandır
+                resultMessages.innerHTML = '';
+                resultDisplay.innerHTML = '';
+                
+                // İşlem durumuna göre ikon ve yazı ayarla
+                document.getElementById('processing-text').textContent = log.success ? 'İşlem Tamamlandı' : 'İşlem Tamamlanamadı';
+                document.getElementById('processing-icon').className = log.success 
+                    ? 'fas fa-check-circle text-green-500 dark:text-green-400'
+                    : 'fas fa-times-circle text-red-500 dark:text-red-400';
+                
+                // İşlem bilgisi mesajı ekle
+                addResultMessage('info', `İşlem Türü: ${log.prompt_type}`);
+                addResultMessage('info', `Dosyalar: ${log.files}`);
+                
+                if (log.notes) {
+                    addResultMessage('info', `Notlar: ${log.notes}`);
+                }
+                
+                // İşlem durumuna göre mesaj ekle
+                if (log.success) {
+                    addResultMessage('success', 'Bu işlem başarıyla tamamlanmıştır.');
+                } else {
+                    addResultMessage('error', 'Bu işlem tamamlanamamıştır.');
+                }
+                
+                // Eğer sonuç içeriği varsa göster
+                if (data.result_content) {
+                    resultContent.classList.remove('hidden');
+                    
+                    if (typeof data.result_content === 'object' && data.result_content["soru-cevaplar"]) {
+                        // Soru-cevap formatı
+                        resultDisplay.innerHTML = formatQAPairs(data.result_content["soru-cevaplar"]);
+                    } else {
+                        // Düz metin formatı
+                        resultDisplay.innerHTML = `<div class="whitespace-pre-wrap">${data.result_content}</div>`;
+                    }
+                    
+                    // İndirme linki varsa güncelle
+                    if (log.result_file) {
+                        downloadResultBtn.href = `/download/${log.result_file}`;
+                    } else {
+                        downloadResultBtn.style.display = 'none';
+                    }
+                } else {
+                    resultContent.classList.add('hidden');
+                }
+                
+                // Progressbar'ı %100 yap
+                progressBar.style.width = '100%';
+                document.getElementById('progress-percentage').textContent = '100%';
+                
+                // Modalı göster
+                resultsModal.classList.remove('hidden');
+            } else {
+                showToast(data.message || 'İşlem detayları alınamadı', 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('İşlem detayları alınırken hata:', error);
+            
+            // Demo veri göster
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                showDemoLogDetail();
+            } else {
+                showToast('İşlem detayları alınırken bir hata oluştu: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Demo işlem detayı göster
+    function showDemoLogDetail() {
+        // Modal içeriğini temizle ve yeniden yapılandır
+        resultMessages.innerHTML = '';
+        resultDisplay.innerHTML = '';
+        
+        // İşlem durumunu ayarla
+        document.getElementById('processing-text').textContent = 'İşlem Tamamlandı (Demo)';
+        document.getElementById('processing-icon').className = 'fas fa-check-circle text-green-500 dark:text-green-400';
+        
+        // İşlem bilgisi mesajları
+        addResultMessage('info', 'İşlem Türü: Soru-Cevap Üretimi (Demo)');
+        addResultMessage('info', 'Dosyalar: ornek_dosya.pdf, ornek_metin.txt');
+        addResultMessage('success', 'Bu işlem başarıyla tamamlanmıştır (Demo).');
+        
+        // Sonuç içeriği göster
+        resultContent.classList.remove('hidden');
+        
+        // Demo soru-cevap formatı
+        const demoQAPairs = [
+            {
+                "soru": "Yapay zekanın eğitim alanındaki temel avantajları nelerdir?",
+                "cevap": "Yapay zekanın eğitimde kullanımının temel avantajları arasında kişiselleştirilmiş öğrenme deneyimi sunması, öğretmenlerin idari yükünü azaltması, erişilebilirliği artırması ve gerçek zamanlı geri bildirim sağlaması yer almaktadır."
+            },
+            {
+                "soru": "Öğrenme analitiği nasıl öğrenci başarısını artırabilir?",
+                "cevap": "Öğrenme analitiği, öğrenci verilerini toplayıp analiz ederek öğrenme süreçlerindeki eksiklikleri tespit eder, ilerleyişi takip eder ve kişiselleştirilmiş öğrenme planları oluşturarak öğrenci başarısını artırabilir."
+            }
+        ];
+        
+        resultDisplay.innerHTML = formatQAPairs(demoQAPairs);
+        
+        // İndirme linki
+        downloadResultBtn.href = "#";
+        
+        // Progressbar
+        progressBar.style.width = '100%';
+        document.getElementById('progress-percentage').textContent = '100%';
+        
+        // Modalı göster
+        resultsModal.classList.remove('hidden');
+    }
+
+    // init fonksiyonuna son işlemleri yükleme fonksiyonunu ekle
+    function init() {
+        // Mevcut init içeriği...
+        updatePromptPreview();
+        setupEventListeners();
+        loadCustomPromptTypes();
+        updateSliderValues();
+        
+        // Son işlemleri yükle
+        loadRecentProcessings();
+    }
+
+    // DOMContentLoaded event listener'ı ekle
+    document.addEventListener('DOMContentLoaded', init);
+
+</script>
+{% endblock %}  

@@ -1,0 +1,1218 @@
+{% extends "base.html" %}
+
+{% block title %}İşlem Geçmişi - Metin Analiz Uygulaması{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center space-x-3">
+    <a href="/" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-home mr-1"></i>
+        <span class="text-sm">Anasayfa</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/settings" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-cog mr-1"></i>
+        <span class="text-sm">Ayarlar</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/chat" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-comment-dots mr-1"></i>
+        <span class="text-sm">AI Sohbet</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/history" class="flex items-center text-primary-600 font-medium">
+        <i class="fas fa-history mr-1"></i>
+        <span class="text-sm">İşlem Geçmişi</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-800">İşlem Geçmişi ve Kayıtlı Sonuçlar</h2>
+        
+        <div class="flex space-x-3">
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Ara..." class="py-2 px-4 pr-10 border rounded-lg">
+                <button id="search-button" class="absolute right-2 top-2 text-gray-500">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            
+            <select id="filter-type" class="py-2 px-4 border rounded-lg">
+                <option value="">Tüm Türler</option>
+                <option value="summary">Özetler</option>
+                <option value="qa_pairs">Soru-Cevap</option>
+                <option value="custom">Özel</option>
+            </select>
+            
+            <button id="only-starred" class="py-2 px-4 border rounded-lg flex items-center">
+                <i class="far fa-star mr-2"></i>
+                <span>Yıldızlılar</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Sekmeler -->
+    <div class="mb-6 border-b">
+        <div class="flex">
+            <button id="tab-logs" class="py-3 px-6 font-medium border-b-2 border-primary-600 text-primary-600">
+                İşlem Geçmişi
+            </button>
+            <button id="tab-saved" class="py-3 px-6 font-medium text-gray-600">
+                Kayıtlı Sonuçlar
+            </button>
+        </div>
+    </div>
+    
+    <!-- İşlem Geçmişi Tablosu -->
+    <div id="logs-container" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8"></th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem Türü</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dosyalar</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notlar</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="logs-table-body">
+                    {% for log in logs %}
+                        <tr data-id="{{ log.id }}" class="log-row">
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <button class="toggle-star" data-id="{{ log.id }}">
+                                    <i class="{% if log.starred %}fas{% else %}far{% endif %} fa-star text-yellow-400"></i>
+                                </button>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ log.timestamp.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ log.prompt_type }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ log.files }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {% if log.success %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Başarılı
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Başarısız
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
+                                {{ log.notes or "---" }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex space-x-2">
+                                    {% if log.result_file %}
+                                    <a href="/download/{{ log.result_file }}" class="text-primary-600 hover:text-primary-800">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% endif %}
+                                    <button class="view-log text-blue-600 hover:text-blue-800" data-id="{{ log.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="edit-notes text-yellow-600 hover:text-yellow-800" data-id="{{ log.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="save-result text-green-600 hover:text-green-800" data-id="{{ log.id }}">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if not logs %}
+        <div class="text-center py-8">
+            <p class="text-gray-500">Henüz işlem geçmişi bulunmuyor.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Kayıtlı Sonuçlar -->
+    <div id="saved-container" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="saved-results-grid">
+            <!-- JavaScript ile doldurulacak -->
+            <div class="text-center py-8 col-span-3">
+                <p class="text-gray-500">Kayıtlı sonuçlar yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İşlem Detay Modalı -->
+<div id="log-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 bg-primary-600 text-white flex items-center justify-between">
+            <h3 class="font-semibold text-lg">İşlem Detayları</h3>
+            <button id="close-log-modal" class="text-white hover:text-primary-200 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-grow" id="log-detail-content">
+            <!-- JavaScript ile doldurulacak -->
+        </div>
+    </div>
+</div>
+
+<!-- Not Düzenleme Modalı -->
+<div id="notes-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+        <div class="px-6 py-4 bg-primary-600 text-white flex items-center justify-between">
+            <h3 class="font-semibold text-lg">Not Düzenle</h3>
+            <button id="close-notes-modal" class="text-white hover:text-primary-200 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <input type="hidden" id="notes-log-id">
+            <textarea id="notes-text" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" rows="4" placeholder="Bu işlem için notlarınızı girin..."></textarea>
+            
+            <div class="mt-4 flex justify-end">
+                <button id="save-notes" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-save mr-2"></i>
+                    <span>Kaydet</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sonuç Kaydetme Modalı -->
+<div id="save-result-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+        <div class="px-6 py-4 bg-primary-600 text-white flex items-center justify-between">
+            <h3 class="font-semibold text-lg">Sonucu Kaydet</h3>
+            <button id="close-save-result-modal" class="text-white hover:text-primary-200 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <input type="hidden" id="save-result-log-id">
+            
+            <div class="mb-4">
+                <label for="result-title" class="block text-gray-700 font-medium mb-2">Başlık</label>
+                <input type="text" id="result-title" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Sonuç başlığı">
+            </div>
+            
+            <div class="mb-4">
+                <label for="result-description" class="block text-gray-700 font-medium mb-2">Açıklama</label>
+                <textarea id="result-description" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" rows="3" placeholder="Sonuç açıklaması"></textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label for="result-tags" class="block text-gray-700 font-medium mb-2">Etiketler (virgülle ayırın)</label>
+                <input type="text" id="result-tags" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="etiket1, etiket2, etiket3">
+            </div>
+            
+            <div class="mt-4 flex justify-end">
+                <button id="confirm-save-result" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-save mr-2"></i>
+                    <span>Kaydet</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    // DOM Elements
+    const logsContainer = document.getElementById('logs-container');
+    const savedContainer = document.getElementById('saved-container');
+    const tabLogs = document.getElementById('tab-logs');
+    const tabSaved = document.getElementById('tab-saved');
+    
+    const logDetailModal = document.getElementById('log-detail-modal');
+    const logDetailContent = document.getElementById('log-detail-content');
+    const closeLogModal = document.getElementById('close-log-modal');
+    
+    const notesModal = document.getElementById('notes-modal');
+    const closeNotesModal = document.getElementById('close-notes-modal');
+    const notesLogId = document.getElementById('notes-log-id');
+    const notesText = document.getElementById('notes-text');
+    const saveNotesBtn = document.getElementById('save-notes');
+    
+    const saveResultModal = document.getElementById('save-result-modal');
+    const closeSaveResultModal = document.getElementById('close-save-result-modal');
+    const saveResultLogId = document.getElementById('save-result-log-id');
+    const resultTitle = document.getElementById('result-title');
+    const resultDescription = document.getElementById('result-description');
+    const resultTags = document.getElementById('result-tags');
+    const confirmSaveResultBtn = document.getElementById('confirm-save-result');
+    
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const filterType = document.getElementById('filter-type');
+    const onlyStarredBtn = document.getElementById('only-starred');
+    
+    const savedResultsGrid = document.getElementById('saved-results-grid');
+    
+    // Application State
+    let activeTab = 'logs';
+    let filterStarred = false;
+    let currentFilters = {
+        query: '',
+        type: '',
+        starred: false
+    };
+    let deleteTargetId = null; // Bu satırı ekleyelim
+    
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        loadSavedResults();
+    });
+    
+    function setupEventListeners() {
+        // Tab switching
+        tabLogs.addEventListener('click', () => switchTab('logs'));
+        tabSaved.addEventListener('click', () => switchTab('saved'));
+        
+        // Log modal
+        closeLogModal.addEventListener('click', closeModal);
+        document.querySelectorAll('.view-log').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const logId = this.getAttribute('data-id');
+                viewLogDetails(logId);
+            });
+        });
+        
+        // Notes modal
+        closeNotesModal.addEventListener('click', () => notesModal.classList.add('hidden'));
+        document.querySelectorAll('.edit-notes').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const logId = this.getAttribute('data-id');
+                openNotesModal(logId);
+            });
+        });
+        saveNotesBtn.addEventListener('click', saveNotes);
+        
+        // Save result modal
+        closeSaveResultModal.addEventListener('click', () => saveResultModal.classList.add('hidden'));
+        document.querySelectorAll('.save-result').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const logId = this.getAttribute('data-id');
+                openSaveResultModal(logId);
+            });
+        });
+        confirmSaveResultBtn.addEventListener('click', saveResult);
+        
+        // Star toggling
+        document.querySelectorAll('.toggle-star').forEach(btn => {
+            btn.addEventListener('click', toggleStar);
+        });
+        
+        // Filtering
+        searchButton.addEventListener('click', filterLogs);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') filterLogs();
+        });
+        filterType.addEventListener('change', filterLogs);
+        onlyStarredBtn.addEventListener('click', function() {
+            this.classList.toggle('bg-yellow-100');
+            filterLogs();
+        });
+
+        // Silme onay modalı event listener'ları
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+
+        if (deleteConfirmModal) {
+            // Modal dışı tıklama
+            deleteConfirmModal.addEventListener('click', function(e) {
+                if (e.target === deleteConfirmModal) {
+                    deleteConfirmModal.classList.add('hidden');
+                    deleteTargetId = null;
+                }
+            });
+        }
+
+        if (cancelDeleteBtn) {
+            // İptal butonu
+            cancelDeleteBtn.addEventListener('click', function() {
+                deleteConfirmModal.classList.add('hidden');
+                deleteTargetId = null;
+            });
+        }
+
+        if (confirmDeleteBtn) {
+            // Onay butonu
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (deleteTargetId) {
+                    confirmDeleteAction(deleteTargetId);
+                }
+                deleteConfirmModal.classList.add('hidden');
+            });
+        }
+    }
+    
+    // Tab switching
+    function switchTab(tab) {
+        activeTab = tab;
+        
+        if (tab === 'logs') {
+            logsContainer.classList.remove('hidden');
+            savedContainer.classList.add('hidden');
+            tabLogs.classList.add('border-b-2', 'border-primary-600', 'text-primary-600');
+            tabLogs.classList.remove('text-gray-600');
+            tabSaved.classList.remove('border-b-2', 'border-primary-600', 'text-primary-600');
+            tabSaved.classList.add('text-gray-600');
+        } else {
+            logsContainer.classList.add('hidden');
+            savedContainer.classList.remove('hidden');
+            tabSaved.classList.add('border-b-2', 'border-primary-600', 'text-primary-600');
+            tabSaved.classList.remove('text-gray-600');
+            tabLogs.classList.remove('border-b-2', 'border-primary-600', 'text-primary-600');
+            tabLogs.classList.add('text-gray-600');
+            
+            // Kayıtlı sonuçları yükle
+            loadSavedResults();
+        }
+    }
+    
+    // View log details
+    async function viewLogDetails(logId) {
+        // Modal içeriğini temizle ve yükleniyor mesajı göster
+        logDetailContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-primary-500 text-2xl"></i><p class="mt-2">Detaylar yükleniyor...</p></div>';
+        
+        // Modal'ı göster
+        logDetailModal.classList.remove('hidden');
+        
+        try {
+            // API'dan detayları al
+            const response = await fetch(`/api/log-details/${logId}`);
+            const data = await response.json();
+            
+            if (!data.success) {
+                logDetailContent.innerHTML = `<div class="text-center text-red-500"><p>${data.message || 'Detaylar alınamadı'}</p></div>`;
+                return;
+            }
+            
+            const log = data.log;
+            const resultContent = data.result_content;
+            
+            // Tarih formatla
+            const date = new Date(log.timestamp);
+            const formattedDate = date.toLocaleDateString('tr-TR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // İçeriği göster
+            let contentHTML = '';
+            
+            if (resultContent) {
+                if (typeof resultContent === 'object' && resultContent.hasOwnProperty('soru-cevaplar')) {
+                    // Soru-cevap formatlı içerik
+                    contentHTML = '<div class="space-y-4">';
+                    resultContent['soru-cevaplar'].forEach((qa, index) => {
+                        contentHTML += `
+                            <div class="border-b pb-3">
+                                <div class="font-semibold text-primary-700">Soru ${index + 1}:</div>
+                                <div class="mb-2">${qa.soru}</div>
+                                <div class="font-semibold text-primary-700">Cevap:</div>
+                                <div>${qa.cevap}</div>
+                            </div>
+                        `;
+                    });
+                    contentHTML += '</div>';
+                } else {
+                    // Düz metin içerik
+                    contentHTML = `<div class="whitespace-pre-wrap">${resultContent}</div>`;
+                }
+            } else {
+                contentHTML = '<p class="text-gray-500 italic">Bu işlem için içerik bulunamadı.</p>';
+            }
+            
+            logDetailContent.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">İşlem Bilgileri</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500">ID</p>
+                                    <p class="font-medium">${log.id}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Tarih</p>
+                                    <p class="font-medium">${formattedDate}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">İşlem Türü</p>
+                                    <p class="font-medium">${log.prompt_type}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Durum</p>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${log.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                        ${log.success ? 'Başarılı' : 'Başarısız'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Dosyalar</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <ul class="space-y-2">
+                                ${log.files.split(', ').map(fileName => {
+                                    const ext = fileName.split('.').pop().toLowerCase();
+                                    let iconClass = 'fas fa-file';
+                                    
+                                    if (['pdf'].includes(ext)) iconClass = 'fas fa-file-pdf text-red-500';
+                                    else if (['jpg', 'jpeg', 'png'].includes(ext)) iconClass = 'fas fa-file-image text-blue-500';
+                                    else if (['txt'].includes(ext)) iconClass = 'fas fa-file-alt text-gray-500';
+                                    else if (['docx'].includes(ext)) iconClass = 'fas fa-file-word text-blue-700';
+                                    else if (['json'].includes(ext)) iconClass = 'fas fa-file-code text-yellow-500';
+                                    
+                                    return `
+                                        <li class="flex items-center">
+                                            <i class="${iconClass} mr-2"></i>
+                                            <span>${fileName}</span>
+                                        </li>
+                                    `;
+                                }).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Notlar</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p>${log.notes || 'Bu işlem için not bulunmuyor.'}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Sonuç</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            ${contentHTML}
+                        </div>
+                    </div>
+                    
+                    ${log.result_file ? `
+                    <div class="flex justify-end">
+                        <a href="/download/${log.result_file}" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            <span>Sonucu İndir</span>
+                        </a>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        } catch (error) {
+            console.error('İşlem detayları alınırken hata:', error);
+            logDetailContent.innerHTML = `<div class="text-center text-red-500"><p>Detaylar alınırken bir hata oluştu: ${error.message}</p></div>`;
+        }
+    }
+    
+    // Close modal
+    function closeModal() {
+        logDetailModal.classList.add('hidden');
+    }
+    
+    // Open notes modal
+    function openNotesModal(logId) {
+        notesLogId.value = logId;
+        
+        // Şimdilik sabit bir not gösteriyoruz
+        notesText.value = "Bu örnek bir soru-cevap işlemi.";
+        
+        notesModal.classList.remove('hidden');
+        notesText.focus();
+    }
+    
+    // Save notes
+    async function saveNotes() {
+        const logId = notesLogId.value;
+        const notes = notesText.value;
+        
+        try {
+            // API'ye istek gönder
+            const response = await fetch('/api/log/update-notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    log_id: logId,
+                    notes: notes
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Notlar modalını kapat
+                notesModal.classList.add('hidden');
+                
+                // Kullanıcıya başarı mesajı göster
+                showToast('Notlar başarıyla kaydedildi.', 'success');
+                
+                // İlgili log satırında notları güncelle (DOM güncelleme)
+                const logRow = document.querySelector(`.log-row[data-id="${logId}"]`);
+                if (logRow) {
+                    const notesCell = logRow.querySelector('td:nth-child(6)');
+                    if (notesCell) {
+                        notesCell.textContent = notes || '---';
+                        
+                        // Animasyon ekleyerek değişikliği vurgula
+                        notesCell.classList.add('bg-yellow-100');
+                        setTimeout(() => {
+                            notesCell.classList.remove('bg-yellow-100');
+                        }, 2000);
+                    }
+                }
+            } else {
+                showToast(`Hata: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Notlar kaydedilirken hata:', error);
+            showToast('Notlar kaydedilirken bir hata oluştu!', 'error');
+        }
+    }
+    
+    // Open save result modal
+    function openSaveResultModal(logId) {
+        saveResultLogId.value = logId;
+        
+        // Alanları temizle
+        resultTitle.value = '';
+        resultDescription.value = '';
+        resultTags.value = '';
+        
+        saveResultModal.classList.remove('hidden');
+        resultTitle.focus();
+    }
+    
+    // Toggle star
+    async function toggleStar(event) {
+        const button = event.currentTarget;
+        const logId = button.getAttribute('data-id');
+        
+        try {
+            const response = await fetch('/api/log/toggle-star', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    log_id: logId
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const icon = button.querySelector('i');
+                
+                if (data.starred) {
+                    icon.classList.replace('far', 'fas');
+                } else {
+                    icon.classList.replace('fas', 'far');
+                }
+                
+                showToast(`İşlem ${data.starred ? 'yıldızlandı' : 'yıldızdan kaldırıldı'}.`, 'success');
+            } else {
+                showToast(`Hata: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Yıldız durumu değiştirilirken hata:', error);
+            showToast('Yıldız durumu değiştirilirken bir hata oluştu!', 'error');
+        }
+    }
+
+    // Save result
+    async function saveResult() {
+        const logId = saveResultLogId.value;
+        const title = resultTitle.value.trim();
+        const description = resultDescription.value.trim();
+        const tags = resultTags.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+        
+        if (!title) {
+            showToast('Başlık alanı zorunludur!', 'error');
+            return;
+        }
+        
+        try {
+            // Önce sonuç dosyasının içeriğini alalım
+            let content = "";
+            const logRow = document.querySelector(`.log-row[data-id="${logId}"]`);
+            if (logRow) {
+                const resultFileLink = logRow.querySelector('a[href^="/download/"]');
+                if (resultFileLink) {
+                    const resultFile = resultFileLink.getAttribute('href').replace('/download/', '');
+                    if (resultFile) {
+                        // Sonuç dosyasının içeriğini alalım (isteğe bağlı)
+                        content = "Bu sonuç içeriği dosyadan alınacak";
+                    }
+                }
+            }
+            
+            // API'ye istek gönder
+            const response = await fetch('/api/save-result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    result_type: 'custom', // Burada varsayılan bir tip kullanıyoruz, gerekirse değiştirilebilir
+                    content: content,       // İçerik alanını boş bırakmıyoruz
+                    source_file: null,
+                    processing_log_id: logId,
+                    tags: tags
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Modal'ı kapat
+                saveResultModal.classList.add('hidden');
+                
+                // Kullanıcıya başarı mesajı göster
+                showToast('Sonuç başarıyla kaydedildi.', 'success');
+                
+                // Kayıtlı sonuçlar sekmesine geç
+                switchTab('saved');
+                
+                // Sonuçları yeniden yükle
+                loadSavedResults();
+            } else {
+                showToast(`Hata: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Sonuç kaydedilirken hata:', error);
+            showToast('Sonuç kaydedilirken bir hata oluştu!', 'error');
+        }
+    }
+    
+    // Filter logs
+    function filterLogs() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedType = filterType.value.toLowerCase();
+        const showOnlyStarred = onlyStarredBtn.classList.contains('bg-yellow-100');
+        
+        console.log("Filtering logs:", { searchTerm, selectedType, showOnlyStarred }); // Debug için
+        
+        document.querySelectorAll('.log-row').forEach(row => {
+            let match = true;
+            
+            // Yıldız filtresi
+            if (showOnlyStarred) {
+                const starIcon = row.querySelector('.toggle-star i');
+                if (starIcon && !starIcon.classList.contains('fas')) {
+                    match = false;
+                }
+            }
+            
+            // Tip filtresi
+            if (selectedType && match) {
+                const typeCell = row.querySelector('td:nth-child(3)');
+                if (typeCell) {
+                    const cellContent = typeCell.textContent.toLowerCase();
+                    
+                    // Seçilen tipe göre kontrol et
+                    if (selectedType === 'summary' && !cellContent.includes('özet')) {
+                        match = false;
+                    } else if (selectedType === 'qa_pairs' && !cellContent.includes('soru-cevap')) {
+                        match = false;
+                    } else if (selectedType === 'custom' && !cellContent.includes('özel')) {
+                        match = false;
+                    }
+                }
+            }
+            
+            // Arama filtresi
+            if (searchTerm && match) {
+                const text = row.textContent.toLowerCase();
+                if (!text.includes(searchTerm)) {
+                    match = false;
+                }
+            }
+            
+            // Satırı göster veya gizle
+            if (match) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Eğer hiç sonuç yoksa, mesaj göster
+        const visibleRows = document.querySelectorAll('.log-row:not([style*="display: none"])');
+        const noResultsMessage = document.getElementById('no-logs-results');
+        
+        if (visibleRows.length === 0) {
+            if (!noResultsMessage) {
+                const message = document.createElement('div');
+                message.id = 'no-logs-results';
+                message.className = 'text-center py-8';
+                message.innerHTML = '<p class="text-gray-500">Arama kriterlerine uygun sonuç bulunamadı.</p>';
+                document.querySelector('#logs-table-body').appendChild(message);
+            }
+        } else {
+            if (noResultsMessage) {
+                noResultsMessage.remove();
+            }
+        }
+    }
+
+    // Load saved results
+    async function loadSavedResults() {
+        if (activeTab !== 'saved') return;
+
+        try {
+            // Yükleniyor mesajını göster
+            savedResultsGrid.innerHTML = `
+                <div class="text-center py-8 col-span-3">
+                    <i class="fas fa-spinner fa-spin text-primary-500 text-2xl"></i>
+                    <p class="mt-2">Kayıtlı sonuçlar yükleniyor...</p>
+                </div>
+            `;
+
+            // API isteği yap
+            let url = '/api/saved-results';
+            const params = new URLSearchParams();
+            
+            if (currentFilters.type) {
+                params.append('type', currentFilters.type);
+            }
+            
+            if (currentFilters.query) {
+                params.append('query', currentFilters.query);
+            }
+            
+            // Limit parametresi ekle
+            params.append('limit', '50');
+            
+            // Parametreleri URL'e ekle
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Sonuçlar yüklenirken bir hata oluştu');
+            }
+            
+            const results = data.results;
+            
+            // Sonuçları göster
+            if (results.length === 0) {
+                savedResultsGrid.innerHTML = `
+                    <div class="text-center py-8 col-span-3">
+                        <p class="text-gray-500">Arama kriterlerine uygun sonuç bulunamadı.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            savedResultsGrid.innerHTML = '';
+            
+            // Benzersiz sonuçları filtrele
+            const uniqueResults = [];
+            const seenContents = new Set();
+
+            results.forEach(result => {
+                // İçeriği string olarak temsil et
+                const contentStr = typeof result.content === 'object' 
+                    ? JSON.stringify(result.content) 
+                    : String(result.content);
+                
+                // Daha önce görmediyse ekle
+                if (!seenContents.has(contentStr)) {
+                    seenContents.add(contentStr);
+                    uniqueResults.push(result);
+                }
+            });
+
+            // Benzersiz sonuçlarla devam et
+            uniqueResults.forEach(result => {
+                // Tarih formatla
+                const date = new Date(result.created_at);
+                const formattedDate = date.toLocaleDateString('tr-TR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Sonuç başlığını kısalt ve anlamlı hale getir
+                let displayTitle = result.title;
+                // Uzun başlıkları kısalt
+                if (displayTitle.length > 30) {
+                    // Eğer başlık tipi "Özel İşlem Türü - Dosya.txt" formatında ise
+                    if (displayTitle.includes(' - ')) {
+                        // Sadece işlem türü kısmını al
+                        displayTitle = displayTitle.split(' - ')[0];
+                    } else {
+                        // Değilse kısalt
+                        displayTitle = displayTitle.substring(0, 27) + '...';
+                    }
+                }
+                
+                // Kart HTML'i
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md overflow-hidden transition hover:shadow-lg';
+                
+                // Sonuç tipine göre renk ve ikon
+                let typeClass, typeIcon, typeText;
+                
+                switch(result.result_type) {
+                    case 'summary':
+                        typeClass = 'bg-blue-100 text-blue-800';
+                        typeIcon = 'fas fa-file-alt';
+                        typeText = 'Özet';
+                        break;
+                    case 'qa_pairs':
+                        typeClass = 'bg-green-100 text-green-800';
+                        typeIcon = 'fas fa-question-circle';
+                        typeText = 'Soru-Cevap';
+                        break;
+                    default:
+                        typeClass = 'bg-purple-100 text-purple-800';
+                        typeIcon = 'fas fa-code';
+                        typeText = 'Özel';
+                }
+                
+                card.innerHTML = `
+                <div class="px-4 py-3 bg-gray-50 flex justify-between items-center">
+                    <div class="flex items-center">
+                        <i class="${typeIcon} mr-2"></i>
+                        <span class="font-medium">${displayTitle}</span>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${typeClass}">
+                        ${typeText}
+                    </span>
+                </div>
+                <div class="p-4">
+                    <p class="text-gray-600 text-sm mb-3">${result.description || 'Açıklama yok'}</p>
+                    
+                    ${result.tags && result.tags.length > 0 ? `
+                    <div class="mb-3">
+                        ${result.tags.map(tag => `
+                            <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1 mb-1">${tag}</span>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="text-xs text-gray-500 mb-3">
+                        <i class="far fa-calendar-alt mr-1"></i> ${formattedDate}
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2">
+                        <button class="view-saved-result text-blue-600 hover:text-blue-800 p-1" data-id="${result.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="delete-saved-result text-red-600 hover:text-red-800 p-1" data-id="${result.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+                
+            savedResultsGrid.appendChild(card);
+            
+            // Event listener'ları doğrudan card'a ekleyelim
+            const viewButton = card.querySelector('.view-saved-result');
+            if (viewButton) {
+                viewButton.addEventListener('click', function() {
+                    const resultId = this.getAttribute('data-id');
+                    viewSavedResult(resultId);
+                });
+            }
+
+            const deleteButton = card.querySelector('.delete-saved-result');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', function() {
+                    const resultId = this.getAttribute('data-id');
+                    deleteSavedResult(resultId);
+                });
+            }
+        });
+
+        
+
+        } catch (error) {
+            console.error('Kayıtlı sonuçlar yüklenirken hata:', error);
+            
+            savedResultsGrid.innerHTML = `
+                <div class="text-center py-8 col-span-3">
+                    <p class="text-red-500">Kayıtlı sonuçlar yüklenirken bir hata oluştu: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    /// Delete saved result - Bu fonksiyonu loadSavedResults dışına çıkar
+    function deleteSavedResult(resultId) {
+        // Silinecek sonuç ID'sini kaydet
+        deleteTargetId = resultId;
+        
+        // Onay modalını göster
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        if (deleteConfirmModal) {
+            deleteConfirmModal.classList.remove('hidden');
+        } else {
+            console.error("Silme onay modalı bulunamadı!");
+        }
+    }
+
+    // Silme işlemini gerçekleştir
+    async function confirmDeleteAction(resultId) {
+        try {
+            // Önce UI'ı güncelle - Silinen kartı hemen gizleyelim
+            const card = document.querySelector(`.delete-saved-result[data-id="${resultId}"]`).closest('.bg-white');
+            if (card) {
+                card.style.display = 'none';
+            }
+            
+            // Ardından silme işlemi yap
+            const response = await fetch(`/api/saved-results/${resultId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Sonuç başarıyla silindi', 'success');
+                
+                // Silinen kart görünür olmadığından sadece tüm listeyi yenile 
+                // (hafif bir kodla, hızlı işlem için)
+                setTimeout(() => {
+                    // Eğer hiç kart kalmadıysa "sonuç bulunamadı" mesajını göster
+                    const visibleCards = document.querySelectorAll('.bg-white:not([style*="display: none"])');
+                    if (visibleCards.length === 0) {
+                        savedResultsGrid.innerHTML = `
+                            <div class="text-center py-8 col-span-3">
+                                <p class="text-gray-500">Kayıtlı sonuç bulunamadı.</p>
+                            </div>
+                        `;
+                    }
+                }, 100);
+            } else {
+                // Hata durumunda kartı tekrar göster
+                if (card) {
+                    card.style.display = '';
+                }
+                showToast(data.message || 'Sonuç silinemedi', 'error');
+            }
+        } catch (error) {
+            console.error('Sonuç silinirken hata:', error);
+            showToast('Sonuç silinirken bir hata oluştu: ' + error.message, 'error');
+        }
+    }
+
+    // View saved result
+    async function viewSavedResult(resultId) {
+        try {
+            // Sonuç detaylarını almak için API isteği
+            const response = await fetch(`/api/saved-results/${resultId}`);
+            const data = await response.json();
+            
+            if (!data.success) {
+                showToast(data.message || 'Sonuç detayları alınamadı', 'error');
+                return;
+            }
+            
+            const result = data.result;
+            
+            // Sonuç tipine göre içerik gösterimi
+            let contentHTML = '';
+            if (result.result_type === 'qa_pairs' && typeof result.content === 'object' && result.content.hasOwnProperty('soru-cevaplar')) {
+                contentHTML = '<div class="space-y-4">';
+                result.content['soru-cevaplar'].forEach((qa, index) => {
+                    contentHTML += `
+                        <div class="border-b pb-3">
+                            <div class="font-semibold text-primary-700">Soru ${index + 1}:</div>
+                            <div class="mb-2">${qa.soru}</div>
+                            <div class="font-semibold text-primary-700">Cevap:</div>
+                            <div>${qa.cevap}</div>
+                        </div>
+                    `;
+                });
+                contentHTML += '</div>';
+            } else {
+                // Düz metin içerik
+                contentHTML = `<div class="whitespace-pre-wrap">${typeof result.content === 'object' ? JSON.stringify(result.content, null, 2) : result.content}</div>`;
+            }
+            
+            // Tarih formatla
+            const date = new Date(result.created_at);
+            const formattedDate = date.toLocaleDateString('tr-TR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // İçeriği detay modalında göster (log-detail-modal yeniden kullanıyoruz)
+            logDetailContent.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Sonuç Bilgileri</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-500">ID</p>
+                                    <p class="font-medium">${result.id}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Tarih</p>
+                                    <p class="font-medium">${formattedDate}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Sonuç Türü</p>
+                                    <p class="font-medium">${getResultTypeDisplay(result.result_type)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Etiketler</p>
+                                    <div>
+                                        ${result.tags && result.tags.length > 0 
+                                            ? result.tags.map(tag => `<span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1 mb-1">${tag}</span>`).join('') 
+                                            : '<span class="text-gray-400">Etiket yok</span>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Açıklama</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p>${result.description || 'Açıklama yok'}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">İçerik</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            ${contentHTML}
+                        </div>
+                    </div>
+                    
+                    ${result.source_file ? `
+                    <div class="flex justify-end">
+                        <a href="/download/${result.source_file}" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            <span>Dosyayı İndir</span>
+                        </a>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Modalı göster
+            logDetailModal.classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Sonuç detayları alınırken hata:', error);
+            showToast('Sonuç detayları alınırken bir hata oluştu: ' + error.message, 'error');
+        }
+    }
+
+    // Sonuç türünü görüntülenebilir metne çevirme
+    function getResultTypeDisplay(type) {
+        switch(type) {
+            case 'summary': return 'Özet';
+            case 'qa_pairs': return 'Soru-Cevap';
+            case 'custom': return 'Özel Analiz';
+            default: return type;
+        }
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        // Mevcut toast'ları temizle (birden fazla çağrılmalarda sorun yaşamamak için)
+        const existingToasts = document.querySelectorAll('.toast-notification');
+        existingToasts.forEach(toast => toast.remove());
+        
+        // Toast oluştur
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg toast-notification';
+        
+        // Tip bazında stil
+        if (type === 'success') {
+            toast.classList.add('bg-green-500', 'text-white');
+        } else if (type === 'error') {
+            toast.classList.add('bg-red-500', 'text-white');
+        } else if (type === 'warning') {
+            toast.classList.add('bg-yellow-500', 'text-white');
+        } else { // info
+            toast.classList.add('bg-blue-500', 'text-white');
+        }
+        
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Animasyon
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'transition-opacity');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+
+</script>
+
+<!-- Silme Onay Modalı -->
+<div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="px-6 py-4 bg-red-600 text-white flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <h3 class="font-semibold text-lg">Silme Onayı</h3>
+        </div>
+        
+        <div class="p-6">
+            <p class="text-gray-700 mb-6">Bu sonucu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-delete" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-800 transition">
+                    İptal
+                </button>
+                <button id="confirm-delete" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white transition">
+                    Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

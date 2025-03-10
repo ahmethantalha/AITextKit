@@ -1,0 +1,65 @@
+metin-analiz-uygulamasi/
+│
+├── static/                      # Statik dosyalar
+│   ├── css/                     # CSS stil dosyaları
+│   ├── js/                      # JavaScript dosyaları
+│   └── images/                  # Görseller ve ikonlar
+│
+├── templates/                   # HTML şablonları
+│   ├── base.html                # Ana şablon
+│   ├── index.html               # Ana sayfa
+│   ├── chat.html                # AI sohbet sayfası
+│   ├── results.html             # Sonuçlar sayfası
+│   ├── settings.html            # Ayarlar sayfası
+│   └── history.html             # Geçmiş sayfası
+│
+├── database/                    # Veritabanı dosyaları
+│   ├── schema.sql               # Veritabanı şeması
+│   └── backups/                 # Veritabanı yedekleri
+│
+├── services/                    # Servis modülleri
+│   ├── data_processor.py        # Dosya işleme servisi
+│   ├── gemini_api.py            # Google Gemini API wrapper
+│   ├── llama_api.py             # Llama API wrapper
+│   └── imagen_api.py            # Imagen API wrapper
+│
+├── uploads/                     # Kullanıcı yüklediği dosyalar
+│
+├── results/                     # Oluşturulan sonuç dosyaları
+│
+├── tests/                       # Test kodları
+│   ├── test_app.py              # Uygulama testleri
+│   ├── test_services.py         # Servis testleri
+│   └── test_data/               # Test için örnek veriler
+│
+│
+├── .github/                     # GitHub özel dosyaları
+│   ├── ISSUE_TEMPLATE/          # Issue şablonları
+│   │   ├── bug_report.md        # Hata raporu şablonu
+│   │   └── feature_request.md   # Özellik isteği şablonu
+│   ├── PULL_REQUEST_TEMPLATE.md # PR şablonu
+│   └── workflows/               # GitHub Actions yapılandırmaları
+│       ├── python-tests.yml     # Test otomasyonu
+│       └── docker-build.yml     # Docker build otomasyonu
+│
+├── app.py                       # Ana uygulama
+├── config.py                    # Uygulama yapılandırması
+├── config_example.py            # Örnek yapılandırma
+├── db.py                        # Veritabanı işlemleri
+├── cleanup.py                   # Veritabanı temizleme
+│
+├── Dockerfile                   # Docker konteyner tanımı
+├── docker-compose.yml           # Docker Compose yapılandırması
+├── pyproject.toml               # Python proje yapılandırması
+├── setup.py                     # Python paket yapılandırması
+│
+├── requirements.txt             # Python bağımlılıkları
+├── .env.example                 # Örnek çevre değişkenleri
+├── .gitignore                   # Git tarafından yoksayılacak dosyalar
+│
+├── LICENSE                      # Lisans dosyası
+├── README.md                    # Proje açıklaması
+├── CONTRIBUTING.md              # Katkıda bulunma rehberi
+├── CHANGELOG.md                 # Değişiklik günlüğü
+├── CODE_OF_CONDUCT.md           # Davranış kuralları
+└── SECURITY.md                  # Güvenlik politikaları

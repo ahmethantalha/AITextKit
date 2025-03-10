@@ -1,0 +1,53 @@
+# Metin Analiz Uygulaması
+
+Yapay zeka destekli metin analiz uygulaması ile dokümanlarınızdan otomatik soru-cevap çiftleri oluşturabilir, metinleri özetleyebilir ve özel analizler yapabilirsiniz.
+
+## Özellikler
+
+- **Soru-Cevap Oluşturma:** Metin dosyalarından otomatik soru ve cevap çiftleri oluşturma
+- **Metin Özeti:** Uzun belgeleri özetleme ve ana noktaları çıkarma
+- **Özel Analiz:** Kişiselleştirilmiş prompt'larla özel analizler yapma
+- **Çoklu Dosya Desteği:** PDF, DOCX, TXT, JSON ve görsel dosyaları işleme
+- **Farklı AI Modelleri:** Google Gemini ve Llama modelleri arasında geçiş yapabilme
+- **Arayüz Özellikleri:** Modern UI, karanlık/açık tema desteği
+
+## Kurulum
+
+1. Repoyu klonlayın:
+
+git clone https://github.com/kullaniciadi/metin-analiz-uygulamasi.git
+cd metin-analiz-uygulamasi
+
+2. Gerekli paketleri yükleyin:
+
+pip install -r requirements.txt
+
+3. Dizin yapısını oluşturun:
+
+mkdir -p uploads results database/backups
+
+4. (Opsiyonel) `.env` dosyası oluşturun ve API anahtarlarınızı ekleyin: (Config.py dosyasını kullanarak da apilerinizi ekleyebilirsiniz. .env daha güvenli bir yöntemdir)
+GEMINI_API_KEY=your_api_key_here
+FLASK_ENV=development
+
+5. Uygulamayı başlatın:
+python app.py
+
+## Kullanım
+
+1. Tarayıcıda `http://localhost:5000` adresine gidin
+2. Dosyaları sürükleyip bırakın veya "Dosya Seç" butonunu kullanarak yükleyin
+3. İşlem türünü seçin (Soru-Cevap, Özet, Özel)
+4. Ayarları yapılandırın ve "İşlemi Başlat" butonuna tıklayın
+5. Sonuçları görüntüleyin ve indirin
+
+## Gereksinimler
+
+- Python 3.8 veya üzeri
+- Google Gemini API anahtarı
+- (Opsiyonel) Llama/AnythingLLM erişimi
+
+## Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+

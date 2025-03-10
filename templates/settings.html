@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+
+{% block title %}Ayarlar - Metin Analiz Uygulaması{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center space-x-3">
+    <a href="/" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-home mr-1"></i>
+        <span class="text-sm">Anasayfa</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/settings" class="flex items-center text-primary-600 font-medium">
+        <i class="fas fa-cog mr-1"></i>
+        <span class="text-sm">Ayarlar</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/chat" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-comment-dots mr-1"></i>
+        <span class="text-sm">AI Sohbet</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/history" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-history mr-1"></i>
+        <span class="text-sm">Geçmiş</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-800">Uygulama Ayarları</h2>
+        <a href="/" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span>Ana Sayfaya Dön</span>
+        </a>
+    </div>
+    
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-md">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-500"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    Bu sayfadan uygulama ayarlarını yapılandırabilirsiniz. API anahtarınızı güncelleyebilir, maksimum dosya boyutunu ayarlayabilir ve varsayılan AI modelini seçebilirsiniz. Değişiklikleriniz kaydedildikten sonra hemen uygulanacaktır.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 gap-8">
+        <!-- AI Model API Anahtarları Bölümü -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 bg-primary-600 text-white">
+                <div class="flex items-center">
+                    <i class="fas fa-key mr-2"></i>
+                    <h3 class="font-semibold">AI Model API Anahtarları</h3>
+                </div>
+            </div>
+            <div class="px-6 py-4">
+                <p class="text-gray-600 mb-4">Desteklenen AI modellerinin API anahtarlarını buradan yönetebilirsiniz.</p>
+                
+                <!-- Gemini API Key -->
+                <div class="mb-6 border-b pb-6">
+                    <div class="flex items-center mb-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" alt="Gemini Logo" class="w-8 h-8 mr-2">
+                        <h4 class="text-xl font-semibold text-gray-800">Google Gemini API</h4>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-3">Google'ın Gemini AI modelini kullanmak için API anahtarınızı girin.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-grow relative">
+                            <input type="password" id="gemini-api-key" class="w-full p-3 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Gemini API anahtarınızı girin" value="{{ current_api_key }}">
+                            <button id="toggle-gemini-password" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <button id="update-gemini-api-key" class="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg transition flex items-center">
+                            <i class="fas fa-save mr-2"></i>
+                            <span>Kaydet</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-2 text-sm text-gray-500">
+                        <a href="https://ai.google.dev/" target="_blank" class="text-primary-600 hover:text-primary-700">Google AI Studio'dan</a> API anahtarı alabilirsiniz.
+                    </div>
+
+                    <!-- Llama API Ayarları -->
+                    <div class="mb-6 border-b pb-6">
+                        <div class="flex items-center mb-3">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" alt="Llama 3.2" class="w-8 h-8 mr-2">
+                            <h4 class="text-xl font-semibold text-gray-800">Llama 3.2 Vision</h4>
+                            <span id="llama-status" class="ml-2 text-xs bg-gray-100 text-gray-800 font-medium px-2 py-1 rounded">Kontrol ediliyor...</span>
+                        </div>
+                
+                        <p class="text-gray-600 mb-3">AnythingLLM API URL'ini ve API anahtarını (gerekiyorsa) girin.</p>
+                        
+                        <div class="mb-4">
+                            <label for="llama-api-url" class="block text-gray-700 text-sm font-medium mb-1">API URL</label>
+                            <input type="text" id="llama-api-url" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                                placeholder="http://localhost:3000" 
+                                value="{{ llama_api_url|default('http://localhost:3000') }}">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="llama-api-key" class="block text-gray-700 text-sm font-medium mb-1">API Anahtarı (opsiyonel)</label>
+                            <div class="flex">
+                                <input type="password" id="llama-api-key" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                                    placeholder="API anahtarı gerekiyorsa girin" 
+                                    value="{{ llama_api_key|default('') }}">
+                                <button id="toggle-llama-api-key" class="ml-2 p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="enable-vision" class="form-checkbox h-5 w-5 text-primary-600" {% if vision_enabled %}checked{% endif %}>
+                                <span class="ml-2 text-gray-700">Görüntü işleme özelliklerini etkinleştir (Llama 3.2 Vision)</span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button id="test-llama-connection" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition flex items-center">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                <span>Bağlantıyı Test Et</span>
+                            </button>
+                        </div>
+                        
+                        <div class="mt-3 text-sm text-gray-500">
+                            <p>AnythingLLM uygulamasını <a href="https://github.com/Mintplex-Labs/anything-llm" target="_blank" class="text-primary-600 hover:underline">GitHub sayfasından</a> edinebilirsiniz.</p>
+                        </div>
+                    </div>
+
+
+                </div>
+                
+                <!-- Gelecekte eklenecek modeller için hazırlık -->
+                <div class="mb-6 border-b pb-6 opacity-50">
+                    <div class="flex items-center mb-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1200px-ChatGPT_logo.svg.png" alt="OpenAI Logo" class="w-8 h-8 mr-2">
+                        <h4 class="text-xl font-semibold text-gray-800">OpenAI API</h4>
+                        <span class="ml-2 text-xs bg-blue-100 text-blue-800 font-medium px-2 py-1 rounded">Yakında</span>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-3">OpenAI'nin GPT modellerini kullanmak için API anahtarınızı girin.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-grow relative">
+                            <input type="password" disabled class="w-full p-3 pr-10 border rounded-lg bg-gray-100" placeholder="Yakında desteklenecek...">
+                        </div>
+                        <button disabled class="bg-gray-300 text-white py-3 px-6 rounded-lg flex items-center cursor-not-allowed">
+                            <i class="fas fa-save mr-2"></i>
+                            <span>Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="opacity-50">
+                    <div class="flex items-center mb-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/14/Anthropic.png" alt="Anthropic Logo" class="w-8 h-8 mr-2">
+                        <h4 class="text-xl font-semibold text-gray-800">Anthropic Claude API</h4>
+                        <span class="ml-2 text-xs bg-blue-100 text-blue-800 font-medium px-2 py-1 rounded">Yakında</span>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-3">Anthropic'in Claude modellerini kullanmak için API anahtarınızı girin.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-grow relative">
+                            <input type="password" disabled class="w-full p-3 pr-10 border rounded-lg bg-gray-100" placeholder="Yakında desteklenecek...">
+                        </div>
+                        <button disabled class="bg-gray-300 text-white py-3 px-6 rounded-lg flex items-center cursor-not-allowed">
+                            <i class="fas fa-save mr-2"></i>
+                            <span>Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Uygulama Ayarları Bölümü -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 bg-primary-600 text-white">
+                <div class="flex items-center">
+                    <i class="fas fa-cog mr-2"></i>
+                    <h3 class="font-semibold">Uygulama Ayarları</h3>
+                </div>
+            </div>
+            <div class="px-6 py-4">
+                <div class="mb-4">
+                    <label for="default-model" class="block text-gray-700 font-medium mb-2">Varsayılan AI Modeli</label>
+                    <select id="default-model" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="gemini" {% if default_model == 'gemini' %}selected{% endif %}>Google Gemini</option>
+                        <option value="openai" disabled>OpenAI (Yakında)</option>
+                        <option value="claude" disabled>Anthropic Claude (Yakında)</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="max-files" class="block text-gray-700 font-medium mb-2">Maksimum Dosya Boyutu (MB)</label>
+                    <input type="number" id="max-files" value="{{ max_file_size }}" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="save-settings" class="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-lg transition flex items-center">
+                        <i class="fas fa-save mr-2"></i>
+                        <span>Tüm Ayarları Kaydet</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+        <div class="mb-4">
+            <i class="fas fa-spinner fa-spin text-primary-500 text-4xl"></i>
+        </div>
+        <p id="loading-message" class="text-lg">İşlem yapılıyor...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // DOM Elements
+    const geminiApiInput = document.getElementById('gemini-api-key');
+    const toggleGeminiPasswordBtn = document.getElementById('toggle-gemini-password');
+    const updateGeminiApiKeyBtn = document.getElementById('update-gemini-api-key');
+    const saveSettingsBtn = document.getElementById('save-settings');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingMessage = document.getElementById('loading-message');
+    
+    // Özel toast container oluştur
+    function createToastContainer() {
+        let container = document.getElementById('settings-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'settings-toast-container';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+    
+    // Özel toast gösterme fonksiyonu
+    function showToast(message, type = 'info', duration = 5000) {
+        console.log(`Toast: ${message} (${type})`); // Debug için
+        
+        const container = createToastContainer();
+        
+        const toast = document.createElement('div');
+        toast.style.minWidth = '300px';
+        toast.style.maxWidth = '500px';
+        toast.style.marginBottom = '10px';
+        toast.style.padding = '15px';
+        toast.style.borderRadius = '4px';
+        toast.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        
+        // Tip bazında stiller
+        if (type === 'success') {
+            toast.style.backgroundColor = '#d4edda';
+            toast.style.color = '#155724';
+            toast.style.borderLeft = '5px solid #28a745';
+        } else if (type === 'error') {
+            toast.style.backgroundColor = '#f8d7da';
+            toast.style.color = '#721c24';
+            toast.style.borderLeft = '5px solid #dc3545';
+        } else if (type === 'warning') {
+            toast.style.backgroundColor = '#fff3cd';
+            toast.style.color = '#856404';
+            toast.style.borderLeft = '5px solid #ffc107';
+        } else {
+            toast.style.backgroundColor = '#d1ecf1';
+            toast.style.color = '#0c5460';
+            toast.style.borderLeft = '5px solid #17a2b8';
+        }
+        
+        // İçerik ve ikon
+        let icon = '';
+        if (type === 'success') icon = '✅';
+        else if (type === 'error') icon = '❌';
+        else if (type === 'warning') icon = '⚠️';
+        else icon = 'ℹ️';
+        
+        toast.innerHTML = `
+            <div style="display: flex; align-items: flex-start;">
+                <span style="margin-right: 10px; font-size: 18px;">${icon}</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Göster
+        setTimeout(() => {
+            toast.style.opacity = '1';
+        }, 10);
+        
+        // Belirtilen süre sonra kaldır
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }, duration);
+    }
+    
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleGeminiPasswordBtn.addEventListener('click', togglePasswordVisibility);
+        updateGeminiApiKeyBtn.addEventListener('click', updateGeminiApiKey);
+        saveSettingsBtn.addEventListener('click', saveAllSettings);
+    });
+    
+    // Toggle password visibility
+    function togglePasswordVisibility() {
+        const icon = toggleGeminiPasswordBtn.querySelector('i');
+        if (geminiApiInput.type === 'password') {
+            geminiApiInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            geminiApiInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Update Gemini API Key
+    async function updateGeminiApiKey() {
+        const apiKey = geminiApiInput.value.trim();
+        if (!apiKey) {
+            showToast('API anahtarı boş olamaz! Lütfen geçerli bir API anahtarı girin.', 'error');
+            return;
+        }
+        
+        try {
+            showLoading('API anahtarı kontrol ediliyor ve kaydediliyor...');
+            
+            const response = await fetch('/api/update-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ api_key: apiKey }),
+            });
+            
+            const data = await response.json();
+            console.log('API Response:', data); // Debug için
+            
+            hideLoading();
+            
+            if (data.success) {
+                showToast('API anahtarı başarıyla doğrulandı ve kaydedildi!', 'success');
+            } else {
+                showToast(`Hata: ${data.message || 'API anahtarı güncellenemedi'}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error); // Debug için
+            hideLoading();
+            showToast('Bağlantı hatası! Lütfen internet bağlantınızı kontrol edin.', 'error');
+        }
+    }
+    
+    // Save all settings
+    async function saveAllSettings() {
+        const apiKey = geminiApiInput.value.trim();
+        const maxFileSize = document.getElementById('max-files').value.trim();
+        const defaultModel = document.getElementById('default-model').value;
+        
+        // Validation
+        if (!apiKey) {
+            showToast('API anahtarı boş olamaz! Lütfen geçerli bir API anahtarı girin.', 'error');
+            return;
+        }
+        
+        if (!maxFileSize || isNaN(maxFileSize) || parseInt(maxFileSize) <= 0) {
+            showToast('Geçerli bir maksimum dosya boyutu giriniz! Pozitif bir sayı olmalıdır.', 'error');
+            return;
+        }
+        
+        const settings = {
+            gemini_api_key: apiKey,
+            max_file_size: parseInt(maxFileSize),
+            default_model: defaultModel
+        };
+        
+        try {
+            showLoading('Ayarlar kaydediliyor...');
+            
+            const response = await fetch('/api/update-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings),
+            });
+            
+            const data = await response.json();
+            console.log('Settings Response:', data); // Debug için
+            
+            hideLoading();
+            
+            if (data.success) {
+                showToast('Tüm ayarlar başarıyla kaydedildi!', 'success');
+            } else {
+                let errorMessage = data.message || 'Ayarlar kaydedilirken bir hata oluştu';
+                
+                if (data.updates) {
+                    const errors = data.updates
+                        .filter(update => !update.success)
+                        .map(update => update.message);
+                    if (errors.length > 0) {
+                        errorMessage += ': ' + errors.join(', ');
+                    }
+                }
+                
+                showToast(`Hata: ${errorMessage}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error); // Debug için
+            hideLoading();
+            showToast('Bağlantı hatası! Lütfen internet bağlantınızı kontrol edin.', 'error');
+        }
+    }
+    
+    // Utility Functions
+    function showLoading(message) {
+        loadingMessage.textContent = message || 'İşlem yapılıyor...';
+        loadingOverlay.classList.remove('hidden');
+    }
+    
+    function hideLoading() {
+        loadingOverlay.classList.add('hidden');
+    }
+
+    // Llama bağlantı testi fonksiyonu
+    document.getElementById('test-llama-connection').addEventListener('click', async function() {
+        const llamaStatusEl = document.getElementById('llama-status');
+        const apiUrl = document.getElementById('llama-api-url').value.trim();
+        const apiKey = document.getElementById('llama-api-key').value.trim();
+        
+        if (!apiUrl) {
+            showToast('AnythingLLM API URL boş olamaz!', 'error');
+            return;
+        }
+        
+        llamaStatusEl.textContent = 'Bağlanıyor...';
+        llamaStatusEl.className = 'ml-2 text-xs bg-blue-100 text-blue-800 font-medium px-2 py-1 rounded';
+        
+        try {
+            showLoading('AnythingLLM bağlantısı test ediliyor...');
+            
+            // Bağlantı testi isteği
+            const response = await fetch('/api/check-llama', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    api_url: apiUrl,
+                    api_key: apiKey
+                })
+            });
+            
+            const data = await response.json();
+            hideLoading();
+            
+            if (data.success && data.available) {
+                llamaStatusEl.textContent = 'Bağlantı Başarılı';
+                llamaStatusEl.className = 'ml-2 text-xs bg-green-100 text-green-800 font-medium px-2 py-1 rounded';
+                showToast('AnythingLLM bağlantısı başarılı!', 'success');
+                
+                // Başarılı bağlantı sonrası, basit bir chat testi yapalım
+                showLoading('AnythingLLM chat testi yapılıyor...');
+                const chatResponse = await fetch('/api/test-llama-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: 'Merhaba, bu bir test mesajıdır. Lütfen kısaca cevap ver.'
+                    })
+                });
+                
+                const chatData = await chatResponse.json();
+                hideLoading();
+                
+                if (chatData.success) {
+                    showToast('AnythingLLM chat testi başarılı!', 'success');
+                    // Test yanıtını göstermek için bir div ekle
+                    const testResponseDiv = document.createElement('div');
+                    testResponseDiv.className = 'mt-3 p-3 bg-gray-50 rounded-lg text-sm';
+                    testResponseDiv.innerHTML = `<strong>Test Yanıtı:</strong><br>${chatData.content}`;
+                    
+                    // Eğer varsa, önceki test yanıtını temizle
+                    const existingResponse = document.getElementById('llama-test-response');
+                    if (existingResponse) {
+                        existingResponse.remove();
+                    }
+                    
+                    testResponseDiv.id = 'llama-test-response';
+                    document.getElementById('test-llama-connection').parentNode.after(testResponseDiv);
+                } else {
+                    showToast(`Chat testi başarısız: ${chatData.message}`, 'warning');
+                }
+            } else {
+                llamaStatusEl.textContent = 'Bağlantı Başarısız';
+                llamaStatusEl.className = 'ml-2 text-xs bg-red-100 text-red-800 font-medium px-2 py-1 rounded';
+                showToast('AnythingLLM bağlantısı başarısız: ' + (data.message || 'Bilinmeyen hata'), 'error');
+            }
+        } catch (error) {
+            hideLoading();
+            llamaStatusEl.textContent = 'Bağlantı Hatası';
+            llamaStatusEl.className = 'ml-2 text-xs bg-red-100 text-red-800 font-medium px-2 py-1 rounded';
+            showToast('Bağlantı testi sırasında bir hata oluştu: ' + error.message, 'error');
+        }
+    });
+
+</script>
+{% endblock %}

@@ -1,0 +1,1354 @@
+{% extends "base.html" %}
+
+{% block title %}AI Sohbet - Metin Analiz Uygulaması{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center space-x-3">
+    <a href="/" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-home mr-1"></i>
+        <span class="text-sm">Anasayfa</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/settings" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-cog mr-1"></i>
+        <span class="text-sm">Ayarlar</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/chat" class="flex items-center text-primary-600 font-medium">
+        <i class="fas fa-comment-dots mr-1"></i>
+        <span class="text-sm">AI Sohbet</span>
+    </a>
+    <span class="text-gray-300">|</span>
+    <a href="/history" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+        <i class="fas fa-history mr-1"></i>
+        <span class="text-sm">Geçmiş</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="flex h-[calc(100vh-14rem)] max-w-6xl mx-auto">
+    <!-- Sol Taraf - Sohbet Listesi -->
+    <div class="w-64 flex-shrink-0 bg-white rounded-lg shadow-md overflow-hidden mr-4 flex flex-col">
+        <div class="px-4 py-3 bg-primary-600 text-white flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Sohbetlerim</h3>
+            <button id="toggle-sidebar" class="text-white hover:text-primary-200 md:hidden">
+                <i class="fas fa-bars"></i>
+            </button>
+    </div>
+    
+        <!-- Yeni Sohbet Butonu -->
+        <div class="p-2">
+            <button id="new-chat-btn" class="w-full bg-primary-100 text-primary-700 hover:bg-primary-200 py-2 px-3 rounded-lg transition flex items-center justify-center">
+                <i class="fas fa-plus mr-2"></i>
+                <span>Yeni Sohbet</span>
+            </button>
+        </div>
+        
+        <!-- Sohbet Listesi -->
+        <div id="chat-list" class="flex-grow overflow-y-auto p-2">
+            <!-- JavaScript ile doldurulacak -->
+        </div>
+    </div>
+    
+    <!-- Sağ Taraf - Aktif Sohbet -->
+    <div class="flex-grow flex flex-col bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 bg-primary-600 text-white flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-robot mr-2"></i>
+                <h3 class="font-semibold">Gemini AI</h3>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="rename-chat" class="text-white hover:text-primary-200 p-1 transition">
+                    <i class="fas fa-edit"></i>
+                </button>
+            <button id="clear-chat" class="text-white hover:text-primary-200 p-1 transition">
+                    <i class="fas fa-trash-alt"></i>
+            </button>
+            </div>
+        </div>
+        
+        <!-- Sohbet Mesaj Alanı -->
+        <div id="chat-messages" class="flex-grow px-6 py-4 overflow-y-auto">
+            <!-- Karşılama mesajı -->
+            <div class="chat-message ai-message mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow max-w-[calc(100%-4rem)]">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-gray-800">Merhaba! Ben Gemini AI. Size nasıl yardımcı olabilirim?</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">{{ current_time }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JavaScript ile doldurulacak mesaj alanı -->
+        </div>
+        
+        <!-- Mesaj Gönderme Alanı -->
+        <div class="px-6 py-4 border-t">
+            <form id="chat-form" class="flex">
+                <div class="flex-grow relative">
+                    <input type="text" id="user-input" class="w-full p-3 pr-20 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Mesajınızı yazın...">
+                    <div class="absolute right-3 top-3 flex space-x-2">
+                        <button type="button" id="image-gen-btn" class="text-gray-400 hover:text-primary-600">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button type="button" id="voice-input" class="text-gray-400 hover:text-primary-600">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    </div>
+                </div>
+                <button type="submit" id="send-message" class="ml-2 bg-primary-600 hover:bg-primary-700 text-white p-3 rounded-lg transition flex items-center">
+                    <i class="fas fa-paper-plane mr-1"></i>
+                    <span>Gönder</span>
+                </button>
+            </form>
+        </div>
+        </div>
+    </div>
+    
+<!-- Görsel Oluşturma Modalı -->
+<div id="image-gen-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Görsel Oluştur</h3>
+            <button id="close-image-modal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <label for="image-prompt" class="block text-gray-700 font-medium mb-2">Görsel İstemi</label>
+            <textarea id="image-prompt" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" rows="3" placeholder="Nasıl bir görsel istediğinizi detaylı olarak açıklayın..."></textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="image-count" class="block text-gray-700 font-medium mb-2">Görsel Sayısı</label>
+                <select id="image-count" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <option value="1">1 Görsel</option>
+                    <option value="2">2 Görsel</option>
+                    <option value="3">3 Görsel</option>
+                    <option value="4">4 Görsel</option>
+                </select>
+            </div>
+            <div>
+                <label for="aspect-ratio" class="block text-gray-700 font-medium mb-2">En Boy Oranı</label>
+                <select id="aspect-ratio" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <option value="1:1">Kare (1:1)</option>
+                    <option value="16:9">Geniş (16:9)</option>
+                    <option value="9:16">Dikey (9:16)</option>
+                    <option value="4:3">Standart (4:3)</option>
+                    <option value="3:4">Portre (3:4)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="image-loading" class="hidden">
+            <div class="flex items-center justify-center py-4">
+                <i class="fas fa-spinner fa-spin text-primary-500 text-2xl mr-2"></i>
+                <span>Görsel oluşturuluyor, lütfen bekleyin...</span>
+            </div>
+        </div>
+        
+        <div id="image-results" class="hidden mb-4">
+            <h4 class="font-medium text-gray-700 mb-2">Oluşturulan Görseller</h4>
+            <div id="generated-images" class="grid grid-cols-2 gap-2"></div>
+        </div>
+        
+        <div class="flex justify-end">
+            <button id="cancel-image-gen" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition mr-2">
+                İptal
+            </button>
+            <button id="generate-image-btn" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition">
+                <i class="fas fa-image mr-2"></i>
+                <span>Görsel Oluştur</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Sohbeti Yeniden Adlandırma Modalı -->
+<div id="rename-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h3 class="text-lg font-semibold mb-4">Sohbeti Yeniden Adlandır</h3>
+        <input type="text" id="chat-name-input" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-4">
+        <div class="flex justify-end space-x-2">
+            <button id="cancel-rename" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition">İptal</button>
+            <button id="confirm-rename" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded transition">Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<!-- Onay Modalı -->
+<div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <div class="text-center mb-4">
+            <div id="confirm-icon" class="mx-auto mb-4 text-3xl text-red-500">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-semibold mb-2">Emin misiniz?</h3>
+            <p id="confirm-message" class="text-gray-600">Bu işlem geri alınamaz.</p>
+        </div>
+        <div class="flex justify-center space-x-3">
+            <button id="cancel-confirm" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded transition">İptal</button>
+            <button id="proceed-confirm" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded transition">Evet, Devam Et</button>
+        </div>
+    </div>
+</div>
+
+<!-- CSS Stillerini ekleyin -->
+<style>
+    .thinking-indicator {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+    }
+    
+    .thinking-dots {
+        display: inline-flex;
+        margin-left: 6px;
+    }
+    
+    .thinking-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #5b9bd5;
+        margin-right: 4px;
+        animation: dot-pulse 1.5s infinite;
+    }
+    
+    .thinking-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .thinking-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes dot-pulse {
+        0% {
+            transform: scale(0.8);
+            opacity: 0.6;
+        }
+        20% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(0.8);
+            opacity: 0.6;
+        }
+    }
+    
+    .typing-effect {
+        overflow: hidden;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    
+    .character {
+        opacity: 0;
+        animation: fade-in 0.01s forwards;
+    }
+    
+    @keyframes fade-in {
+        to {
+            opacity: 1;
+        }
+    }
+    
+    .chat-item {
+        transition: all 0.2s ease;
+    }
+    
+    .chat-item.active {
+        background-color: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid #3b82f6;
+    }
+    
+    .chat-item:hover:not(.active) {
+        background-color: rgba(229, 231, 235, 0.5);
+    }
+    
+    @media (max-width: 768px) {
+        .sidebar-hidden {
+            display: none;
+        }
+    }
+    
+    /* Modal animasyonları */
+    @keyframes modal-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes modal-slide-in {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    #confirm-modal, #rename-modal, #image-gen-modal {
+        animation: modal-fade-in 0.3s ease;
+    }
+    
+    #confirm-modal > div, #rename-modal > div, #image-gen-modal > div {
+        animation: modal-slide-in 0.3s ease;
+    }
+    
+    /* Toast bildirimleri */
+    .toast-notification {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM elementleri
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const sendMessageBtn = document.getElementById('send-message');
+    const voiceInputBtn = document.getElementById('voice-input');
+    const clearChatBtn = document.getElementById('clear-chat');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const chatList = document.getElementById('chat-list');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+    const renameBtn = document.getElementById('rename-chat');
+    
+    // Modaller
+    const renameModal = document.getElementById('rename-modal');
+    const chatNameInput = document.getElementById('chat-name-input');
+    const confirmRenameBtn = document.getElementById('confirm-rename');
+    const cancelRenameBtn = document.getElementById('cancel-rename');
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmTitle = document.getElementById('confirm-title');
+    const confirmMessage = document.getElementById('confirm-message');
+    const confirmIcon = document.getElementById('confirm-icon');
+    const cancelConfirmBtn = document.getElementById('cancel-confirm');
+    const proceedConfirmBtn = document.getElementById('proceed-confirm');
+    
+    // Görsel oluşturma elementleri
+    const imageGenBtn = document.getElementById('image-gen-btn');
+    const imageGenModal = document.getElementById('image-gen-modal');
+    const closeImageModal = document.getElementById('close-image-modal');
+    const imagePrompt = document.getElementById('image-prompt');
+    const imageCount = document.getElementById('image-count');
+    const aspectRatio = document.getElementById('aspect-ratio');
+    const generateImageBtn = document.getElementById('generate-image-btn');
+    const cancelImageGen = document.getElementById('cancel-image-gen');
+    const imageLoading = document.getElementById('image-loading');
+    const imageResults = document.getElementById('image-results');
+    const generatedImages = document.getElementById('generated-images');
+    
+    // Eksik elementleri kontrol et
+    const missingElements = [];
+    if (!chatMessages) missingElements.push('chatMessages');
+    if (!chatForm) missingElements.push('chatForm');
+    if (!userInput) missingElements.push('userInput');
+    if (!imageGenBtn) missingElements.push('imageGenBtn');
+    if (!imageGenModal) missingElements.push('imageGenModal');
+    if (!closeImageModal) missingElements.push('closeImageModal');
+    
+    if (missingElements.length > 0) {
+        console.error("Eksik elementler:", missingElements.join(', '));
+    } else {
+        console.log("Tüm elementler başarıyla yüklendi");
+    }
+    
+    // Uygulama durumu
+    let activeConversationId = null;
+    let conversations = [];
+    let isWaitingForResponse = false;
+    let currentConfirmCallback = null;
+    
+    // Sayfa yüklendiğinde localStorage'dan sohbetleri yükle
+    loadConversations();
+    
+    // Event listeners
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+    }
+    
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', function() {
+            if (confirmModal) {
+                showConfirmModal(
+                    'Sohbeti Temizle', 
+                    'Sohbet geçmişini temizlemek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+                    'fa-trash-alt',
+                    clearCurrentChat
+                );
+            } else {
+                clearCurrentChat();
+            }
+        });
+    }
+    
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', createNewConversation);
+    }
+    
+    if (voiceInputBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        voiceInputBtn.addEventListener('click', startVoiceInput);
+    } else if (voiceInputBtn) {
+        voiceInputBtn.style.display = 'none';
+    }
+    
+    if (toggleSidebarBtn) {
+        toggleSidebarBtn.addEventListener('click', function() {
+            const sidebar = document.querySelector('.w-64');
+            if (sidebar) {
+                sidebar.classList.toggle('sidebar-hidden');
+            }
+        });
+    }
+    
+    if (renameBtn && renameModal) {
+        renameBtn.addEventListener('click', openRenameModal);
+    }
+    
+    if (confirmRenameBtn) {
+        confirmRenameBtn.addEventListener('click', renameCurrentChat);
+    }
+    
+    if (cancelRenameBtn) {
+        cancelRenameBtn.addEventListener('click', function() {
+            if (renameModal) renameModal.classList.add('hidden');
+        });
+    }
+    
+    if (cancelConfirmBtn) {
+        cancelConfirmBtn.addEventListener('click', function() {
+            if (confirmModal) confirmModal.classList.add('hidden');
+            currentConfirmCallback = null;
+        });
+    }
+    
+    if (proceedConfirmBtn) {
+        proceedConfirmBtn.addEventListener('click', function() {
+            if (typeof currentConfirmCallback === 'function') {
+                currentConfirmCallback();
+            }
+            if (confirmModal) confirmModal.classList.add('hidden');
+            currentConfirmCallback = null;
+        });
+    }
+    
+    // Görsel oluşturma olayları
+    if (imageGenBtn && imageGenModal) {
+        imageGenBtn.addEventListener('click', function() {
+            imageGenModal.classList.remove('hidden');
+            if (imagePrompt) {
+                imagePrompt.value = '';
+                imagePrompt.focus();
+            }
+            if (imageResults) {
+                imageResults.classList.add('hidden');
+            }
+            if (generatedImages) {
+                generatedImages.innerHTML = '';
+            }
+        });
+    }
+    
+    if (closeImageModal && imageGenModal) {
+        closeImageModal.addEventListener('click', function() {
+            imageGenModal.classList.add('hidden');
+        });
+    }
+    
+    if (cancelImageGen && imageGenModal) {
+        cancelImageGen.addEventListener('click', function() {
+            imageGenModal.classList.add('hidden');
+        });
+    }
+    
+    if (generateImageBtn) {
+        generateImageBtn.addEventListener('click', generateImage);
+    }
+    
+    // Modal dışı tıklamalara yanıt
+    if (confirmModal) {
+        confirmModal.addEventListener('click', function(e) {
+            if (e.target === confirmModal) {
+                confirmModal.classList.add('hidden');
+                currentConfirmCallback = null;
+            }
+        });
+    }
+    
+    if (renameModal) {
+        renameModal.addEventListener('click', function(e) {
+            if (e.target === renameModal) {
+                renameModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    if (imageGenModal) {
+        imageGenModal.addEventListener('click', function(e) {
+            if (e.target === imageGenModal) {
+                imageGenModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Eğer hiç sohbet yoksa, yeni bir sohbet oluştur
+    if (conversations.length === 0) {
+        createNewConversation();
+    } else {
+        // Son sohbeti aktif et
+        activateConversation(conversations[0].id);
+    }
+    
+    // Input alanına odaklan
+    if (userInput) {
+        userInput.focus();
+    }
+    
+    // Fonksiyonlar
+    function loadConversations() {
+        try {
+            const saved = localStorage.getItem('gemini_conversations');
+            if (saved) {
+                conversations = JSON.parse(saved);
+                renderChatList();
+            } else {
+                conversations = [];
+            }
+        } catch (e) {
+            console.error('Sohbetler yüklenirken hata:', e);
+            conversations = [];
+        }
+    }
+    
+    function saveConversations() {
+        try {
+            localStorage.setItem('gemini_conversations', JSON.stringify(conversations));
+        } catch (e) {
+            console.error('Sohbetler kaydedilirken hata:', e);
+        }
+    }
+    
+    function createNewConversation() {
+        const now = new Date();
+        const newConversation = {
+            id: 'conv_' + Date.now(),
+            title: 'Yeni Sohbet',
+            date: now.toISOString(),
+            messages: []
+        };
+        
+        // Yeni sohbeti listeye ekle
+        conversations.unshift(newConversation);
+        saveConversations();
+        renderChatList();
+        
+        // Yeni sohbeti aktif et
+        activateConversation(newConversation.id);
+    }
+    
+    function renderChatList() {
+        if (!chatList) return;
+        
+        chatList.innerHTML = '';
+        
+        if (conversations.length === 0) {
+            return;
+        }
+        
+        conversations.forEach(conv => {
+            const chatItem = document.createElement('div');
+            chatItem.className = `chat-item p-2 rounded cursor-pointer flex items-center justify-between ${conv.id === activeConversationId ? 'active' : ''}`;
+            chatItem.dataset.id = conv.id;
+            
+            const leftContent = document.createElement('div');
+            leftContent.className = 'flex items-center flex-grow overflow-hidden';
+            
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-comment-dots text-gray-500 mr-2';
+            
+            const title = document.createElement('div');
+            title.className = 'truncate text-sm';
+            title.textContent = conv.title;
+            
+            leftContent.appendChild(icon);
+            leftContent.appendChild(title);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'text-gray-400 hover:text-red-500 ml-2';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.title = 'Sohbeti Sil';
+            
+            chatItem.appendChild(leftContent);
+            chatItem.appendChild(deleteBtn);
+            
+            // Sohbete tıklama olayı
+            leftContent.addEventListener('click', function() {
+                activateConversation(conv.id);
+            });
+            
+            // Silme butonuna tıklama olayı
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                deleteConversation(conv.id);
+            });
+            
+            chatList.appendChild(chatItem);
+        });
+    }
+    
+    function activateConversation(conversationId) {
+        if (isWaitingForResponse) return;
+        
+        activeConversationId = conversationId;
+        const conversation = conversations.find(c => c.id === conversationId);
+        
+        if (!conversation) return;
+        
+        // Aktif sohbeti vurgula
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.id === conversationId);
+        });
+        
+        // Sohbet mesajlarını göster
+        renderConversation(conversation);
+    }
+    
+    function renderConversation(conversation) {
+        if (!chatMessages) return;
+        
+        chatMessages.innerHTML = '';
+        
+        if (conversation.messages.length === 0) {
+            // Karşılama mesajı
+            const welcomeMessage = document.createElement('div');
+            welcomeMessage.className = 'chat-message ai-message mb-4';
+            welcomeMessage.innerHTML = `
+                <div class="flex">
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow max-w-[calc(100%-4rem)]">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-gray-800">Merhaba! Ben Gemini AI. Size nasıl yardımcı olabilirim?</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(welcomeMessage);
+        } else {
+            // Mesajları göster
+            conversation.messages.forEach(msg => {
+                addMessageToUI(msg.sender, msg.message, msg.time);
+            });
+        }
+        
+        // Mesaj alanının en altına kaydır
+        scrollToBottom();
+    }
+    
+    function deleteConversation(conversationId) {
+        if (confirmModal) {
+            showConfirmModal(
+                'Sohbeti Sil', 
+                'Bu sohbeti silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+                'fa-trash-alt',
+                function() {
+                    performDeleteConversation(conversationId);
+                }
+            );
+        } else {
+            performDeleteConversation(conversationId);
+        }
+    }
+    
+    function performDeleteConversation(conversationId) {
+        const index = conversations.findIndex(c => c.id === conversationId);
+        if (index === -1) return;
+        
+        // Sohbeti sil
+        conversations.splice(index, 1);
+        saveConversations();
+        renderChatList();
+        
+        // Eğer silinen sohbet aktifse, başka bir sohbeti aktif et
+        if (conversationId === activeConversationId) {
+            if (conversations.length > 0) {
+                activateConversation(conversations[0].id);
+            } else {
+                // Hiç sohbet kalmadıysa yeni bir sohbet oluştur
+                createNewConversation();
+            }
+        }
+    }
+    
+    function clearCurrentChat() {
+        if (isWaitingForResponse || !activeConversationId) return;
+        
+        const conversation = conversations.find(c => c.id === activeConversationId);
+        if (!conversation) return;
+        
+        // Mesajları temizle
+        conversation.messages = [];
+        saveConversations();
+        
+        // UI'ı güncelle
+        renderConversation(conversation);
+    }
+    
+    function openRenameModal() {
+        if (!renameModal || !chatNameInput || !activeConversationId) return;
+        
+        const conversation = conversations.find(c => c.id === activeConversationId);
+        if (!conversation) return;
+        
+        chatNameInput.value = conversation.title;
+        renameModal.classList.remove('hidden');
+        chatNameInput.focus();
+        chatNameInput.select();
+    }
+    
+    function renameCurrentChat() {
+        if (!chatNameInput || !activeConversationId) return;
+        
+        const name = chatNameInput.value.trim();
+        if (!name) return;
+        
+        const conversation = conversations.find(c => c.id === activeConversationId);
+        if (!conversation) return;
+        
+        // Başlığı güncelle
+        conversation.title = name;
+        saveConversations();
+        renderChatList();
+        
+        // Modal'ı kapat
+        if (renameModal) renameModal.classList.add('hidden');
+    }
+    
+    function sendMessage() {
+        if (!userInput || !activeConversationId) return;
+        
+        const message = userInput.value.trim();
+        
+        // Bekliyor veya mesaj boşsa veya aktif sohbet yoksa işlem yapma
+        if (isWaitingForResponse || message === '') {
+            return;
+        }
+        
+        const conversation = conversations.find(c => c.id === activeConversationId);
+        if (!conversation) return;
+        
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Mesajı sohbete ekle
+        conversation.messages.push({
+            sender: 'user',
+            message: message,
+            time: time
+        });
+        
+        // Başlığı otomatik güncelle (eğer sadece bir kullanıcı mesajı varsa)
+        if (conversation.messages.filter(m => m.sender === 'user').length === 1) {
+            // İlk mesajı başlık olarak kullan (max 30 karakter)
+            conversation.title = message.length > 30 ? message.substring(0, 27) + '...' : message;
+            renderChatList();
+        }
+        
+        saveConversations();
+        
+        // UI'a mesajı ekle
+        addMessageToUI('user', message, time);
+        
+        // Input alanını temizle
+        userInput.value = '';
+        
+        // AI yanıtı iste
+        getAIResponse(message, conversation);
+    }
+    
+    async function getAIResponse(message, conversation) {
+        try {
+            isWaitingForResponse = true;
+            
+            // Düşünüyor göstergesi ekle
+            const thinkingId = addThinkingIndicator();
+            
+            // Sohbet geçmişini oluştur (son 10 mesaj)
+            const recentMessages = conversation.messages.slice(-10);
+            
+            console.log("API isteği gönderiliyor...", message);
+            
+            // API'ye istek gönder
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    history: recentMessages
+                }),
+            });
+            
+            console.log("API yanıtı alındı", response.status);
+            
+            // Düşünme göstergesini kaldır
+            removeThinkingIndicator(thinkingId);
+            
+            const data = await response.json();
+            console.log("API yanıtı işlendi", data.success);
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (data.success) {
+                console.log("Başarılı yanıt, UI güncelleniyor");
+                
+                // AI yanıtını sohbete ekle
+                conversation.messages.push({
+                    sender: 'ai',
+                    message: data.response,
+                    time: time
+                });
+                saveConversations();
+                
+                // UI'a mesajı ekle (animate parametresini false olarak ayarla)
+                addMessageToUI('ai', data.response, time, false);
+                
+                // DOM güncellemesini zorlamak için timeout kullanma
+                setTimeout(() => {
+                    console.log("DOM güncellemesi zorlanıyor");
+                    scrollToBottom();
+                }, 100);
+                
+                // Eğer ilk konuşmaysa ve başlık halen "Yeni Sohbet" ise, konudan otomatik başlık oluştur
+                if (conversation.title === 'Yeni Sohbet' && conversation.messages.length >= 2) {
+                    generateChatTitle(conversation);
+                }
+            } else {
+                console.error("API'den hata yanıtı:", data.message);
+                // Hata mesajı göster
+                addMessageToUI('ai', `Üzgünüm, bir hata oluştu: ${data.message || 'Bilinmeyen hata'}`, time, false);
+            }
+        } catch (error) {
+            console.error('AI yanıtı alınırken hata:', error);
+            
+            // Düşünme göstergelerini temizle
+            clearThinkingIndicators();
+            
+            // Hata mesajı göster
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            addMessageToUI('ai', 'Üzgünüm, sunucuyla iletişim kurarken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.', time, false);
+        } finally {
+            console.log("Yanıt işlemi tamamlandı, bekleme durumu kaldırılıyor");
+            isWaitingForResponse = false;
+        }
+    }
+    
+
+
+    async function generateChatTitle(conversation) {
+        try {
+            const userMessage = conversation.messages.find(m => m.sender === 'user')?.message || '';
+            
+            // Basit kurallar ile başlık oluştur
+            let title = userMessage;
+            
+            // Uzunsa kısalt
+            if (title.length > 30) {
+                title = title.substring(0, 27) + '...';
+            }
+            
+            // Soru işareti varsa, soru olarak ele al
+            if (userMessage.includes('?')) {
+                const questionPart = userMessage.split('?')[0] + '?';
+                title = questionPart.length > 30 ? questionPart.substring(0, 27) + '...' : questionPart;
+            }
+            
+            // Başlığı güncelle
+            conversation.title = title;
+            saveConversations();
+            renderChatList();
+        } catch (error) {
+            console.error('Başlık oluşturulurken hata:', error);
+        }
+    }
+    
+    function addThinkingIndicator() {
+        if (!chatMessages) return null;
+        
+        const id = 'thinking-' + Date.now();
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const thinkingElement = document.createElement('div');
+        thinkingElement.id = id;
+        thinkingElement.className = 'chat-message ai-message mb-4';
+        
+        thinkingElement.innerHTML = `
+            <div class="flex">
+                <div class="flex-shrink-0 mr-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                </div>
+                <div class="flex-grow max-w-[calc(100%-4rem)]">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <div class="thinking-indicator">
+                            <span>Düşünüyorum</span>
+                            <div class="thinking-dots">
+                                <div class="thinking-dot"></div>
+                                <div class="thinking-dot"></div>
+                                <div class="thinking-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">${time}</div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(thinkingElement);
+        scrollToBottom();
+        
+        return id;
+    }
+    
+    function removeThinkingIndicator(id) {
+        if (!id) return;
+        
+        const element = document.getElementById(id);
+        if (element) {
+            element.remove();
+        }
+    }
+    
+    function clearThinkingIndicators() {
+        const indicators = document.querySelectorAll('[id^="thinking-"]');
+        indicators.forEach(el => el.remove());
+    }
+    
+    function formatMessage(message) {
+        if (!message) return '';
+        
+        // Kod bloklarını işle
+        message = message.replace(/```([\s\S]*?)```/g, function(match, code) {
+            return `<pre class="bg-gray-800 text-gray-100 p-3 rounded my-2 overflow-auto"><code>${escapeHTML(code)}</code></pre>`;
+        });
+        
+        // Tek satırlık kod
+        message = message.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded">$1</code>');
+        
+        // Başlıklar
+        message = message.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-2 mb-1">$1</h3>');
+        message = message.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-3 mb-2">$1</h2>');
+        message = message.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-3">$1</h1>');
+        
+        // Kalın ve italik
+        message = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        message = message.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        // Listeler
+        message = message.replace(/^\s*[\-\*]\s+(.*)/gm, '<li class="ml-5">$1</li>');
+        
+        // Paragraflar
+        message = message.replace(/\n\n/g, '</p><p class="mb-2">');
+        
+        // Satır sonları
+        message = message.replace(/\n/g, '<br>');
+        
+        return `<p class="mb-2">${message}</p>`;
+    }
+    
+    function addMessageToUI(sender, message, time, animate = false) {
+    if (!chatMessages) return;
+    
+    // Mesaj elemanını oluştur
+    const messageElement = document.createElement('div');
+    messageElement.className = `chat-message ${sender}-message mb-4`;
+    
+    if (sender === 'user') {
+        // Kullanıcı mesajı
+        if (message.startsWith('!GENERATED_IMAGE!')) {
+            // Görsel mesajını işle
+            const match = message.match(/\!\GENERATED_IMAGE\!\[(.*?)\]\((.*?)\)/);
+            if (match && match.length >= 3) {
+                const imageUrl = match[1];
+                const imagePrompt = match[2];
+                
+                messageElement.innerHTML = `
+                    <div class="flex flex-row-reverse">
+                        <div class="flex-shrink-0 ml-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow max-w-[calc(100%-4rem)] text-right">
+                            <div class="bg-gray-100 p-3 rounded-lg inline-block">
+                                <p class="text-gray-800 text-left mb-2">Görseli oluşturdum: "${escapeHTML(imagePrompt)}"</p>
+                                <img src="${imageUrl}" alt="Oluşturulan görsel" class="max-w-full h-auto rounded" />
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${time}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Görsel ayrıştırılamadıysa normal mesaj olarak göster
+                messageElement.innerHTML = `
+                    <div class="flex flex-row-reverse">
+                        <div class="flex-shrink-0 ml-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow max-w-[calc(100%-4rem)] text-right">
+                            <div class="bg-gray-100 p-3 rounded-lg inline-block">
+                                <p class="text-gray-800 text-left">${escapeHTML(message)}</p>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            // Normal metin mesajı
+            messageElement.innerHTML = `
+                <div class="flex flex-row-reverse">
+                    <div class="flex-shrink-0 ml-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow max-w-[calc(100%-4rem)] text-right">
+                        <div class="bg-gray-100 p-3 rounded-lg inline-block">
+                            <p class="text-gray-800 text-left">${escapeHTML(message)}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${time}</div>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        // AI mesajı
+        if (!message) message = ""; // Null kontrolü
+        const formattedMessage = formatMessage(message);
+        
+        messageElement.innerHTML = `
+            <div class="flex">
+                <div class="flex-shrink-0 mr-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                </div>
+                <div class="flex-grow max-w-[calc(100%-4rem)]">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <div class="text-gray-800 markdown-content" id="ai-message-content-${Date.now()}">
+                            ${animate ? '' : formattedMessage}
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">${time}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageElement);
+    scrollToBottom();
+    
+    if (sender === 'ai' && animate) {
+        const contentElement = messageElement.querySelector('[id^="ai-message-content-"]');
+        if (contentElement) {
+                animateTyping(contentElement, formattedMessage);
+            }
+        }
+    }
+
+    
+    function animateTyping(element, html) {
+   // HTML içeriğini DOM elementine çevir
+   const tempDiv = document.createElement('div');
+   tempDiv.innerHTML = html;
+   
+   // İçeriği önce görünmez yap
+   element.innerHTML = '<div class="typing-effect"></div>';
+   const typingElement = element.querySelector('.typing-effect');
+   
+   if (!typingElement) return;
+   
+   // Her 10ms'de bir karakter ekleyerek animasyon yap
+   let text = tempDiv.textContent || '';
+   let charIndex = 0;
+   
+   // Maximum süre (30 saniye)
+   const maxTime = 30000;
+   // Hız (1 karakter/ms)
+   const rate = 15;
+   // İçerik uzunluğu
+   const contentLength = text.length;
+   // Hesaplanan süre (minimum 500ms, maximum maxTime)
+   const duration = Math.min(maxTime, Math.max(500, contentLength * rate));
+   // Her adımda kaç karakter ekleneceğini hesapla
+   const charsPerStep = Math.max(1, Math.ceil(contentLength / (duration / 50)));
+   
+   function typeNextChar() {
+       if (charIndex < text.length) {
+           // Her adımda birkaç karakter ekle
+           const nextChars = text.substring(charIndex, charIndex + charsPerStep);
+           typingElement.textContent += nextChars;
+           charIndex += charsPerStep;
+           
+           // Scroll aşağı
+           scrollToBottom();
+           
+           // Devam et
+           setTimeout(typeNextChar, 50);
+       } else {
+           // Animasyon tamamlandı, asıl formatlanmış içeriği göster
+           element.innerHTML = html;
+       }
+   }
+   
+   // Animasyonu başlat
+   setTimeout(typeNextChar, 50);
+}
+
+function startVoiceInput() {
+   if (isWaitingForResponse || !voiceInputBtn || !userInput) {
+       return; // Yanıt beklerken ses girişini engelle
+   }
+   
+   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+   if (!SpeechRecognition) return;
+   
+   const recognition = new SpeechRecognition();
+   recognition.lang = 'tr-TR';
+   recognition.interimResults = false;
+   
+   // Mikrofon ikonunu değiştir
+   voiceInputBtn.innerHTML = '<i class="fas fa-microphone-slash text-red-500"></i>';
+   
+   recognition.onresult = function(event) {
+       const transcript = event.results[0][0].transcript;
+       userInput.value = transcript;
+       voiceInputBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+       
+       // Otomatik gönder
+       setTimeout(() => {
+           sendMessage();
+       }, 500);
+   };
+   
+   recognition.onerror = function(event) {
+       console.error('Speech recognition error', event.error);
+       voiceInputBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+   };
+   
+   recognition.onend = function() {
+       voiceInputBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+   };
+   
+   try {
+       recognition.start();
+   } catch (e) {
+       console.error('Speech recognition error:', e);
+   }
+}
+
+function escapeHTML(text) {
+   const div = document.createElement('div');
+   div.textContent = text;
+   return div.innerHTML;
+}
+
+function scrollToBottom() {
+   if (chatMessages) {
+       chatMessages.scrollTop = chatMessages.scrollHeight;
+   }
+}
+
+function showConfirmModal(title, message, iconClass, callback) {
+   if (!confirmModal || !confirmTitle || !confirmMessage || !confirmIcon) return;
+   
+   confirmTitle.textContent = title;
+   confirmMessage.textContent = message;
+   confirmIcon.innerHTML = `<i class="fas ${iconClass}"></i>`;
+   
+   currentConfirmCallback = callback;
+   confirmModal.classList.remove('hidden');
+}
+
+// Görsel oluşturma işlevi
+async function generateImage() {
+   if (!imagePrompt || !imageResults || !imageLoading || !generateImageBtn || !generatedImages) {
+       console.error("Görsel oluşturma için gerekli elementler bulunamadı");
+       return;
+   }
+   
+   const prompt = imagePrompt.value.trim();
+   if (!prompt) {
+       showToast('Lütfen bir görsel istemi girin!', 'error');
+       return;
+   }
+   
+   try {
+       // Hide results, show loading
+       imageResults.classList.add('hidden');
+       imageLoading.classList.remove('hidden');
+       generateImageBtn.disabled = true;
+       
+       // Get parameters
+       const numImages = parseInt(imageCount ? imageCount.value : 1);
+       const ratio = aspectRatio ? aspectRatio.value : '1:1';
+       
+       // Send API request
+       const response = await fetch('/api/generate-image', {
+           method: 'POST',
+           headers: {
+               'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({
+               prompt: prompt,
+               num_images: numImages,
+               aspect_ratio: ratio
+           }),
+       });
+       
+       const data = await response.json();
+       
+       // Hide loading
+       imageLoading.classList.add('hidden');
+       generateImageBtn.disabled = false;
+       
+       if (!data.success) {
+           showToast(`Hata: ${data.message}`, 'error');
+           return;
+       }
+       
+       // Display results
+       if (data.download_urls && data.download_urls.length > 0) {
+           generatedImages.innerHTML = '';
+           
+           data.download_urls.forEach(url => {
+               const imageCard = document.createElement('div');
+               imageCard.className = 'relative bg-gray-100 rounded overflow-hidden group';
+               
+               imageCard.innerHTML = `
+                   <img src="${url}" alt="Oluşturulan görsel" class="w-full h-auto object-cover">
+                   <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                       <button class="send-to-chat bg-primary-600 text-white p-2 rounded-full" data-url="${url}">
+                           <i class="fas fa-paper-plane"></i>
+                       </button>
+                       <a href="${url}" download class="bg-green-600 text-white p-2 rounded-full ml-2">
+                           <i class="fas fa-download"></i>
+                       </a>
+                   </div>
+               `;
+               
+               generatedImages.appendChild(imageCard);
+           });
+           
+           // Add click event to send images to chat
+           document.querySelectorAll('.send-to-chat').forEach(btn => {
+               btn.addEventListener('click', function() {
+                   const imageUrl = this.getAttribute('data-url');
+                   sendImageToChat(imageUrl, prompt);
+                   if (imageGenModal) imageGenModal.classList.add('hidden');
+               });
+           });
+           
+           imageResults.classList.remove('hidden');
+           showToast(`${data.image_count} görsel başarıyla oluşturuldu!`, 'success');
+       } else {
+           showToast('Görsel oluşturuldu ancak bir hata nedeniyle gösterilemiyor', 'warning');
+       }
+   } catch (error) {
+       if (imageLoading) imageLoading.classList.add('hidden');
+       if (generateImageBtn) generateImageBtn.disabled = false;
+       showToast(`Bir hata oluştu: ${error.message}`, 'error');
+   }
+}
+
+function sendImageToChat(imageUrl, prompt) {
+   if (!userInput) return;
+   
+   // Create a special message with image link
+   const message = `!GENERATED_IMAGE![${imageUrl}](${prompt})`;
+   
+   // Use existing sendMessage infrastructure
+   userInput.value = message;
+   sendMessage();
+}
+
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'fixed bottom-4 right-4 z-50';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Remove existing toasts
+    const existingToasts = toastContainer.querySelectorAll('.toast-notification');
+    existingToasts.forEach(toast => toast.remove());
+
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification px-4 py-2 rounded-lg shadow-lg mb-2 transform translate-y-0 opacity-100 transition-all duration-300';
+
+    // Set toast style based on type
+    switch (type) {
+        case 'success':
+            toast.classList.add('bg-green-500', 'text-white');
+            icon = 'fa-check-circle';
+            break;
+        case 'error':
+            toast.classList.add('bg-red-500', 'text-white');
+            icon = 'fa-exclamation-circle';
+            break;
+        case 'warning':
+            toast.classList.add('bg-yellow-500', 'text-white');
+            icon = 'fa-exclamation-triangle';
+            break;
+        default:
+            toast.classList.add('bg-blue-500', 'text-white');
+            icon = 'fa-info-circle';
+    }
+
+    // Set toast content
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${icon} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    // Add toast to container
+    toastContainer.appendChild(toast);
+
+    // Remove toast after delay
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+});
+</script>
+{% endblock %}

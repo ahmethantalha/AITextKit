@@ -1,0 +1,62 @@
+# Python genel dosyaları
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Flask özel
+instance/
+.webassets-cache
+
+# Veritabanı
+*.db
+*.sqlite3
+database/*.db
+database/backups/
+!database/schema.sql
+
+# Uygulama özel
+uploads/
+results/
+logs/
+
+# API anahtarları ve gizli bilgiler
+.env
+config_local.py
+config_override.py
+config.py
+
+# IDE dosyaları
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# venv / virtualenv
+venv/
+ENV/
+
+# Testler & Debug
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+debug_logs/

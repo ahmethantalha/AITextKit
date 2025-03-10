@@ -1,0 +1,20 @@
+# Web framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Dosya işleme
+PyMuPDF==1.22.5  # PDF işleme için
+pytesseract==0.3.10  # Resimler üzerinde OCR için
+Pillow==10.0.0  # Resim işleme için
+python-docx==0.8.11  # DOCX işleme için
+pdf2image==1.16.3  # PDF'i resme dönüştürme için
+fpdf2==2.7.4  # PDF oluşturma için
+
+# API ve HTTP
+requests==2.31.0  # API çağrıları için
+
+# Veritabanı
+# SQLite3 Python ile yerleşik gelir
+
+# Diğer yardımcı programlar
+python-dateutil==2.8.2

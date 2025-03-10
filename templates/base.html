@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Metin Analiz Uygulaması{% endblock %}</title>
+    
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Theme Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <style>
+        .dropzone {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: #0ea5e9;
+            background-color: rgba(186, 230, 253, 0.3);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Karanlık tema stilleri */
+        .dark {
+            color-scheme: dark;
+        }
+        
+        .dark body {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        
+        .dark .bg-white {
+            background-color: #1e1e1e !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: #121212 !important;
+        }
+        
+        .dark .text-gray-800 {
+            color: #e0e0e0 !important;
+        }
+        
+        .dark .text-gray-700 {
+            color: #d0d0d0 !important;
+        }
+        
+        .dark .text-gray-600 {
+            color: #b0b0b0 !important;
+        }
+        
+        .dark .text-gray-500 {
+            color: #9e9e9e !important;
+        }
+        
+        .dark .border {
+            border-color: #333333 !important;
+        }
+        
+        .dark .border-t {
+            border-color: #333333 !important;
+        }
+        
+        .dark .border-b {
+            border-color: #333333 !important;
+        }
+        
+        .dark .shadow-md {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .dropzone {
+            border-color: #333333;
+            background-color: #1e1e1e;
+        }
+        
+        .dark .dropzone:hover, .dark .dropzone.dragover {
+            border-color: #3b82f6;
+            background-color: rgba(30, 58, 138, 0.2);
+        }
+        
+        .dark input, .dark select, .dark textarea {
+            background-color: #2a2a2a;
+            border-color: #333333;
+            color: #e0e0e0;
+        }
+        
+        .dark input::placeholder, .dark textarea::placeholder {
+            color: #9e9e9e;
+        }
+        
+        .dark #prompt-preview {
+            background-color: #2a2a2a;
+            border-color: #333333;
+            color: #e0e0e0;
+        }
+        
+        .dark .divide-y > * {
+            border-color: #333333 !important;
+        }
+    
+        /* Diğer bileşenlerin karanlık tema stilleri */
+        .dark .bg-primary-600 {
+            background-color: #0369a1 !important;
+        }
+    
+        .dark .hover\:bg-primary-700:hover {
+            background-color: #075985 !important;
+        }
+        
+        .dark .hover\:bg-gray-100:hover {
+            background-color: #2a2a2a !important;
+        }
+        
+        .dark .bg-gray-100 {
+            background-color: #2a2a2a !important;
+        }
+        
+        .dark .hover\:bg-gray-200:hover {
+            background-color: #333333 !important;
+        }
+        
+        .dark .bg-blue-50 {
+            background-color: rgba(30, 58, 138, 0.15) !important;
+        }
+        
+        .dark .text-blue-700 {
+            color: #93c5fd !important;
+        }
+        
+        .dark .border-blue-500 {
+            border-color: #3b82f6 !important;
+        }
+        
+        .dark .bg-green-50 {
+            background-color: rgba(20, 83, 45, 0.2) !important;
+        }
+        
+        .dark .bg-red-50 {
+            background-color: rgba(127, 29, 29, 0.2) !important;
+        }
+        
+        .dark .bg-yellow-50 {
+            background-color: rgba(113, 63, 18, 0.2) !important;
+        }
+        
+        .dark .bg-blue-100 {
+            background-color: rgba(30, 58, 138, 0.3) !important;
+        }
+        
+        .dark .text-blue-800 {
+            color: #93c5fd !important;
+        }
+        
+        /* Sonuç görüntüleme alanı */
+        .dark #result-display {
+            background-color: #2a2a2a !important;
+            border-color: #333333 !important;
+        }
+        
+        /* Modaller için arka plan */
+        .dark #loading-overlay .bg-white,
+        .dark #results-modal .bg-white,
+        .dark #prompt-types-modal .bg-white {
+            background-color: #1e1e1e !important;
+        }
+        
+        /* Karanlık tema için özel bileşen stilleri */
+        .dark .bg-primary-100 {
+            background-color: rgba(30, 58, 138, 0.2) !important;
+        }
+        
+        .dark .text-primary-800 {
+            color: #93c5fd !important;
+        }
+        
+        .dark .hover\:bg-primary-200:hover {
+            background-color: rgba(30, 58, 138, 0.3) !important;
+        }
+        
+        .dark .text-primary-700 {
+            color: #60a5fa !important;
+        }
+        
+        .dark .text-primary-600 {
+            color: #3b82f6 !important;
+        }
+        
+        .dark .text-green-500 {
+            color: #4ade80 !important;
+        }
+        
+        .dark .text-red-500 {
+            color: #f87171 !important;
+        }
+        
+        .dark .text-yellow-500 {
+            color: #fbbf24 !important;
+        }
+        
+        .dark .text-blue-500 {
+            color: #60a5fa !important;
+        }
+        
+        /* Karanlık tema için animasyon */
+        @keyframes darkPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .dark .animate-pulse {
+            animation: darkPulse 0.5s ease-in-out;
+        }
+        
+        /* Karanlık tema için header butonları */
+        .dark .text-gray-300 {
+            color: #4b5563 !important;
+        }
+        
+        .dark a.text-primary-600 {
+            color: #60a5fa !important;
+        }
+        
+        .dark a.text-primary-600:hover {
+            color: #93c5fd !important;
+        }
+        
+        /* Karanlık tema için sonuç mesajları ve işlem durumu */
+        .dark #result-messages {
+            background-color: #2a2a2a !important;
+            border-color: #333333 !important;
+        }
+        
+        .dark #progress-percentage {
+            color: #d1d5db !important;
+        }
+    </style>
+    
+    <!-- Favicon ve Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='images/site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    
+    <!-- Android Chrome Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='images/android-chrome-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='images/android-chrome-512x512.png') }}">
+    
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-file-alt text-primary-600 text-2xl"></i>
+                <h1 class="text-2xl font-bold text-gray-800">Metin Analiz Uygulaması</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Bu kısmı her sayfada özelleştirilebilir blok olarak tanımlayalım -->
+                
+                {% block header_actions %}
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+                        <i class="fas fa-home mr-1"></i>
+                        <span class="text-sm">Anasayfa</span>
+                    </a>
+                    <span class="text-gray-300">|</span>
+                    <a href="/settings" class="flex items-center text-gray-800 hover:text-primary-600 transition">
+                        <i class="fas fa-cog mr-1"></i>
+                        <span class="text-sm">Ayarlar</span>
+                    </a>
+                </div>
+                {% endblock %}
+
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-moon text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="mt-8 bg-white py-6 border-t">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>&copy; 2025 Metin Analiz Uygulaması</p>
+        </div>
+    </footer>
+    
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+    
+    <!-- Common JavaScript -->
+    <script>
+        // Theme toggling (light/dark mode)
+        const themeToggle = document.getElementById('theme-toggle');
+        const icon = themeToggle.querySelector('i');
+        
+        // Check for saved theme preference or prefer-color-scheme
+        function applyTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                icon.classList.add('text-yellow-400');
+                icon.classList.remove('text-gray-600');
+            } else {
+                document.documentElement.classList.remove('dark');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                icon.classList.remove('text-yellow-400');
+                icon.classList.add('text-gray-600');
+            }
+        }
+        
+        // Apply theme on page load
+        applyTheme();
+        
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            // Add a subtle animation effect
+            themeToggle.classList.add('animate-pulse');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                icon.classList.remove('text-yellow-400');
+                icon.classList.add('text-gray-600');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                icon.classList.add('text-yellow-400');
+                icon.classList.remove('text-gray-600');
+            }
+            
+            // Remove animation after a short delay
+            setTimeout(() => {
+                themeToggle.classList.remove('animate-pulse');
+            }, 500);
+        });
+        
+        // Toast notification function
+        function showToast(message, type = 'info', duration = 5000) {
+            // Önce konsola yazdır (hata ayıklama için)
+            console.log(`Showing toast: ${message} (type: ${type})`);
+            
+            // base.html'deki showToast'u çağır
+            if (window.showToast) {
+                window.showToast(message, type, duration);
+            } else {
+                // Eğer global showToast fonksiyonu yoksa, basit bir alternatif
+                console.warn("Global showToast function not found, using alternative");
+                
+                // Toast container kontrolü
+                let container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.style.position = 'fixed';
+                    container.style.top = '20px';
+                    container.style.right = '20px';
+                    container.style.zIndex = '1000';
+                    document.body.appendChild(container);
+                }
+                
+                // Toast elementi oluştur
+                const toast = document.createElement('div');
+                
+                // Tip bazında class ve stil ekle
+                if (type === 'success') {
+                    toast.style.backgroundColor = '#d4edda';
+                    toast.style.color = '#155724';
+                    toast.style.borderColor = '#c3e6cb';
+                } else if (type === 'error') {
+                    toast.style.backgroundColor = '#f8d7da';
+                    toast.style.color = '#721c24';
+                    toast.style.borderColor = '#f5c6cb';
+                } else if (type === 'warning') {
+                    toast.style.backgroundColor = '#fff3cd';
+                    toast.style.color = '#856404';
+                    toast.style.borderColor = '#ffeeba';
+                } else {
+                    toast.style.backgroundColor = '#d1ecf1';
+                    toast.style.color = '#0c5460';
+                    toast.style.borderColor = '#bee5eb';
+                }
+                
+                // Ortak stiller
+                toast.style.padding = '12px 20px';
+                toast.style.marginBottom = '10px';
+                toast.style.borderRadius = '4px';
+                toast.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                toast.style.borderLeft = '4px solid';
+                toast.style.opacity = '0';
+                toast.style.transition = 'all 0.3s ease';
+                
+                // İçerik ekleme
+                toast.textContent = message;
+                
+                // Container'a ekle
+                container.appendChild(toast);
+                
+                // Animasyon ile göster
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                }, 10);
+                
+                // Süre sonunda kaldır
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
+
+
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
