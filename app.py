@@ -1136,7 +1136,7 @@ def update_progress(result_data, current_index, total_files):
     progress = ((current_index + 1) / total_files) * 100
     result_data['messages'].append({
         'type': 'info',
-        'text': f"İlerleme - Dosya: %{progress:.1f}"
+        'text': f"İlerleme - Dosya: {progress:.1f}%"
     })
 
 def process_combined_content(content, api, prompt, is_qa, is_summary, is_custom, result_data, all_results):
@@ -1402,7 +1402,7 @@ def process_text_chunks(chunks, file_index, total_files, prompt, api, is_summary
         
         result_data['messages'].append({
             'type': 'info',
-            'text': f"İlerleme - Dosya: %{file_progress:.1f}, Bölüm: %{chunk_progress:.1f}"
+            'text': f"İlerleme - Dosya: {file_progress:.1f}%, Bölüm: {chunk_progress:.1f}%"
         })
 
 
